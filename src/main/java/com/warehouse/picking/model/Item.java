@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-
+import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "item")
 public class Item {
@@ -18,10 +18,12 @@ public class Item {
     private Long id;
 
     @NotBlank(message = "SKU is required")
+    @Size(max = 100, message = "SKU must be at most 100 characters")
     @Column(nullable = false, unique = true)
     private String sku;
 
     @NotBlank(message = "Name is required")
+    @Size(max = 100, message = "Name must be at most 100 characters")
     private String name;
 
     private String location;
