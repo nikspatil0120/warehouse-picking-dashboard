@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Catalogue | Warehouse Picking Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Item Catalogue</p>
+        </div>
+
+        <a id="add-item" class="btn btn-primary" th:href="@{/items/new}">
+            + Add Item
+        </a>
+    </header>
+
+    <main class="content">
+
+        <div class="alert success" th:if="${message}" th:text="${message}">
+            Item added successfully
+        </div>
+
+        <section class="card">
+
+            <div class="card-header">
+                <div>
+                    <h2>Item Catalogue</h2>
+                    <p>View all warehouse items and their current stock.</p>
+                </div>
+
+                <span class="item-count"
+                      th:text="${#lists.size(items)} + ' items'">
+                    0 items
+                </span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(items)}" class="empty-state">
+                <div class="empty-icon">📦</div>
+                <h3>No items found</h3>
+                <p>The catalogue is currently empty. Add an item to get started.</p>
+
+                <a class="btn btn-primary" th:href="@{/items/new}">
+                    + Add First Item
+                </a>
+            </div>
+
+            <div class="table-wrapper" th:unless="${#lists.isEmpty(items)}">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Item Name</th>
+                        <th>Location</th>
+                        <th>Quantity</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:each="item : ${items}">
+                        <td>
+                            <span class="sku" th:text="${item.sku}">SKU-1001</span>
+                        </td>
+
+                        <td class="item-name" th:text="${item.name}">
+                            Item Name
+                        </td>
+
+                        <td th:text="${item.location}">
+                            A-01
+                        </td>
+
+                        <td>
+                            <span class="quantity"
+                                  th:text="${item.quantity}">
+                                50
+                            </span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Warehouse Picking Dashboard &copy; 2026</p>
+    </footer>
+
+</div>
+
+</body>
+</html>
