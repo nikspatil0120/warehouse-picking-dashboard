@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Item | Warehouse Picking Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Add Item</p>
+        </div>
+
+        <a class="btn btn-secondary" th:href="@{/items}">
+            ← Back to Catalogue
+        </a>
+    </header>
+
+    <main class="content">
+
+        <section class="form-card">
+
+            <div class="card-header">
+                <div>
+                    <h2>Add New Item</h2>
+                    <p>Enter the details of the warehouse item.</p>
+                </div>
+            </div>
+
+            <form th:action="@{/items}"
+                  th:object="${item}"
+                  method="post"
+                  class="item-form">
+
+                <div class="form-group">
+                    <label for="sku">SKU</label>
+
+                    <input id="sku"
+                           type="text"
+                           th:field="*{sku}"
+                           placeholder="e.g. SKU-1001">
+
+                    <div class="field-error"
+                         th:if="${#fields.hasErrors('sku')}"
+                         th:errors="*{sku}">
+                        SKU is required
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="name">Item Name</label>
+
+                    <input id="name"
+                           type="text"
+                           th:field="*{name}"
+                           placeholder="e.g. Wireless Mouse">
+
+                    <div class="field-error"
+                         th:if="${#fields.hasErrors('name')}"
+                         th:errors="*{name}">
+                        Name is required
+                    </div>
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+
+                        <input id="location"
+                               type="text"
+                               th:field="*{location}"
+                               placeholder="e.g. A-01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+
+                        <input id="quantity"
+                               type="number"
+                               min="0"
+                               th:field="*{quantity}"
+                               placeholder="0">
+
+                        <div class="field-error"
+                             th:if="${#fields.hasErrors('quantity')}"
+                             th:errors="*{quantity}">
+                            Quantity cannot be negative
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <label for="reorderThreshold">Reorder Threshold</label>
+
+                    <input id="reorderThreshold"
+                           type="number"
+                           min="0"
+                           th:field="*{reorderThreshold}"
+                           placeholder="e.g. 10">
+                </div>
+
+                <div class="form-actions">
+                    <a class="btn btn-secondary" th:href="@{/items}">
+                        Cancel
+                    </a>
+
+                    <button id="save-item"
+                            type="submit"
+                            class="btn btn-primary">
+                        Save Item
+                    </button>
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Warehouse Picking Dashboard &copy; 2026</p>
+    </footer>
+
+</div>
+
+</body>
+</html>
