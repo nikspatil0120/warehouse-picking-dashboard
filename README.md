@@ -82,3 +82,6 @@ git clone https://github.com/nikspatil0120/warehouse-picking-dashboard.git
 
 cd warehouse-picking-dashboard
 
+## Continuous Integration
+
+Jenkins CI monitors the develop branch and runs the Maven clean package build to verify changes and archive the application WAR.
