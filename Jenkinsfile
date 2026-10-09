@@ -50,7 +50,7 @@ pipeline {
             }
             steps {
                 script {
-                    def deployDir = env.TOMCAT_WEBAPPS_DIR
+                    def deployDir = env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'
 
                     if (!deployDir?.trim()) {
                         error(
