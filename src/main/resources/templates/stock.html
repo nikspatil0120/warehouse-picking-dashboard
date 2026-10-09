@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Transactions</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div><h1>Warehouse Picking Dashboard</h1><p>Stock Transactions</p></div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/}">Dashboard</a><a th:href="@{/items}">Items</a>
+        <a th:href="@{/stock}">Stock</a><a th:href="@{/orders}">Orders</a>
+        <a th:href="@{/alerts}">Alerts</a>
+    </nav>
+    <main class="content">
+        <div class="alert success" th:if="${message}" th:text="${message}"></div>
+        <div class="alert error" th:if="${error}" th:text="${error}"></div>
+        <section class="form-card">
+            <div class="card-header"><div><h2>Record Stock Movement</h2>
+                <p>Stock-out cannot exceed available quantity.</p></div></div>
+            <form class="item-form" method="post" th:action="@{/stock}"
+                  th:object="${transactionForm}">
+                <div class="form-group">
+                    <label for="itemId">Item</label>
+                    <select id="itemId" th:field="*{itemId}" required>
+                        <option value="">Select an item</option>
+                        <option th:each="item : ${items}" th:value="${item.id}"
+                                th:text="${item.sku + ' — ' + item.name + ' (Qty: ' + item.quantity + ')'}">
+                        </option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="type">Movement</label>
+                        <select id="type" th:field="*{type}" required>
+                            <option th:each="type : ${transactionTypes}"
+                                    th:value="${type}" th:text="${type}">IN</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input id="quantity" type="number" min="1"
+                               th:field="*{quantity}" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notes">Notes (optional)</label>
+                    <input id="notes" type="text" th:field="*{notes}"
+                           placeholder="Restock delivery, picking, adjustment...">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Record Transaction</button>
+                </div>
+            </form>
+        </section>
+        <section class="card section-gap">
+            <div class="card-header"><div><h2>Transaction History</h2>
+                <p>Newest transactions first.</p></div></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Date</th><th>SKU</th><th>Item</th>
+                        <th>Type</th><th>Quantity</th><th>Notes</th></tr></thead>
+                    <tbody>
+                    <tr th:each="tx : ${transactions}">
+                        <td th:text="${#temporals.format(tx.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                        <td th:text="${tx.item.sku}">SKU</td>
+                        <td th:text="${tx.item.name}">Item</td>
+                        <td th:text="${tx.type}">IN</td>
+                        <td th:text="${tx.quantity}">1</td>
+                        <td th:text="${tx.notes}">Notes</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transactions)}">
+                        <td colspan="6">No stock transactions recorded yet.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>

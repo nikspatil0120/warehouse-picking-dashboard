@@ -1,101 +1,76 @@
+
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Item Catalogue | Warehouse Picking Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-
 <div class="app-shell">
-
     <header class="topbar">
         <div>
             <h1>Warehouse Picking Dashboard</h1>
             <p>Item Catalogue</p>
         </div>
-
-        <a id="add-item" class="btn btn-primary" th:href="@{/items/new}">
-            + Add Item
-        </a>
+        <a class="btn btn-primary" th:href="@{/items/new}">+ Add Item</a>
     </header>
-
+    <nav class="nav-links">
+        <a th:href="@{/}">Dashboard</a>
+        <a th:href="@{/items}">Items</a>
+        <a th:href="@{/stock}">Stock</a>
+        <a th:href="@{/orders}">Orders</a>
+        <a th:href="@{/alerts}">Alerts</a>
+    </nav>
     <main class="content">
-
-        <div class="alert success" th:if="${message}" th:text="${message}">
-            Item added successfully
-        </div>
-
+        <div class="alert success" th:if="${message}" th:text="${message}"></div>
         <section class="card">
-
             <div class="card-header">
                 <div>
                     <h2>Item Catalogue</h2>
-                    <p>View all warehouse items and their current stock.</p>
+                    <p>Search by SKU or item name and check current stock.</p>
                 </div>
-
-                <span class="item-count"
-                      th:text="${#lists.size(items)} + ' items'">
-                    0 items
-                </span>
+                <span class="item-count" th:text="${totalItems} + ' total items'">0 items</span>
             </div>
-
+            <form class="search-form" method="get" th:action="@{/items}">
+                <input type="text" name="search" placeholder="Search SKU or name"
+                       th:value="${search}">
+                <button class="btn btn-primary" type="submit">Search</button>
+                <a class="btn btn-secondary" th:href="@{/items}">Clear</a>
+            </form>
             <div th:if="${#lists.isEmpty(items)}" class="empty-state">
-                <div class="empty-icon">📦</div>
                 <h3>No items found</h3>
-                <p>The catalogue is currently empty. Add an item to get started.</p>
-
-                <a class="btn btn-primary" th:href="@{/items/new}">
-                    + Add First Item
-                </a>
+                <p>No items match this search, or the catalogue is empty.</p>
+                <a class="btn btn-primary" th:href="@{/items/new}">+ Add Item</a>
             </div>
-
             <div class="table-wrapper" th:unless="${#lists.isEmpty(items)}">
                 <table>
                     <thead>
-                    <tr>
-                        <th>SKU</th>
-                        <th>Item Name</th>
-                        <th>Location</th>
-                        <th>Quantity</th>
-                    </tr>
+                    <tr><th>SKU</th><th>Name</th><th>Location</th>
+                        <th>Quantity</th><th>Reorder At</th><th>Status</th></tr>
                     </thead>
-
                     <tbody>
                     <tr th:each="item : ${items}">
+                        <td><span class="sku" th:text="${item.sku}">SKU</span></td>
+                        <td class="item-name" th:text="${item.name}">Item</td>
+                        <td th:text="${item.location}">A-01</td>
+                        <td th:text="${item.quantity}">0</td>
+                        <td th:text="${item.reorderThreshold}">5</td>
                         <td>
-                            <span class="sku" th:text="${item.sku}">SKU-1001</span>
-                        </td>
-
-                        <td class="item-name" th:text="${item.name}">
-                            Item Name
-                        </td>
-
-                        <td th:text="${item.location}">
-                            A-01
-                        </td>
-
-                        <td>
-                            <span class="quantity"
-                                  th:text="${item.quantity}">
-                                50
+                            <span class="status"
+                                  th:classappend="${item.quantity == 0} ? ' status-danger' : (${item.quantity <= item.reorderThreshold} ? ' status-warning' : ' status-good')"
+                                  th:text="${item.quantity == 0} ? 'OUT OF STOCK' : (${item.quantity <= item.reorderThreshold} ? 'LOW STOCK' : 'IN STOCK')">
+                                IN STOCK
                             </span>
                         </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-
         </section>
-
     </main>
-
-    <footer>
-        <p>Warehouse Picking Dashboard &copy; 2026</p>
-    </footer>
-
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
 </div>
-
 </body>
 </html>

@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order Management</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div><h1>Warehouse Picking Dashboard</h1><p>Order Management</p></div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/}">Dashboard</a><a th:href="@{/items}">Items</a>
+        <a th:href="@{/stock}">Stock</a><a th:href="@{/orders}">Orders</a>
+        <a th:href="@{/alerts}">Alerts</a>
+    </nav>
+    <main class="content">
+        <div class="alert success" th:if="${message}" th:text="${message}"></div>
+        <div class="alert error" th:if="${error}" th:text="${error}"></div>
+        <section class="form-card">
+            <div class="card-header"><div><h2>Create Order</h2>
+                <p>New orders begin with PENDING status.</p></div></div>
+            <form class="item-form" method="post" th:action="@{/orders}"
+                  th:object="${orderForm}">
+                <div class="form-group">
+                    <label for="itemId">Item</label>
+                    <select id="itemId" th:field="*{itemId}" required>
+                        <option value="">Select an item</option>
+                        <option th:each="item : ${items}" th:value="${item.id}"
+                                th:text="${item.sku + ' — ' + item.name}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Order quantity</label>
+                    <input id="quantity" type="number" min="1"
+                           th:field="*{quantity}" required>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" type="submit">Create Order</button>
+                </div>
+            </form>
+        </section>
+        <section class="card section-gap">
+            <div class="card-header"><div><h2>Orders</h2>
+                <p>Update the workflow status for each order.</p></div></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Item</th><th>Quantity</th>
+                        <th>Created</th><th>Status</th><th>Update Status</th></tr></thead>
+                    <tbody>
+                    <tr th:each="order : ${orders}">
+                        <td th:text="${order.id}">1</td>
+                        <td th:text="${order.item.sku + ' — ' + order.item.name}">Item</td>
+                        <td th:text="${order.quantity}">1</td>
+                        <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                        <td><span class="status" th:text="${order.status}">PENDING</span></td>
+                        <td>
+                            <form class="inline-form" method="post"
+                                  th:action="@{/orders/{id}/status(id=${order.id})}">
+                                <select name="status" required>
+                                    <option th:each="status : ${statuses}"
+                                            th:value="${status}" th:text="${status}"
+                                            th:selected="${status == order.status}"></option>
+                                </select>
+                                <button class="btn btn-primary" type="submit">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(orders)}">
+                        <td colspan="6">No orders have been created yet.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>
