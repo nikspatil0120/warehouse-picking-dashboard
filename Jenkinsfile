@@ -66,7 +66,7 @@ pipeline {
                         error("Tomcat deployment directory not found: ${deployDir}")
                     }
 
-                    bat "copy /Y \"${env.WAR_FILE}\" \"${deployDir}\\picking-dashboard.war\""
+                    bat "copy /Y \"${env.WORKSPACE}\\${env.WAR_FILE}\" \"${deployDir}\\picking-dashboard.war\""
                 }
             }
         }
