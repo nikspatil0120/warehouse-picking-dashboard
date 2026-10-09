@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Warehouse Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Inventory and order operations</p>
+        </div>
+    </header>
+    <main class="content">
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Dashboard</h2>
+                    <p>Select a module to manage warehouse operations.</p>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <a class="dashboard-tile" th:href="@{/items}">
+                    <h3>Item Catalogue</h3>
+                    <p>Browse, search, and add inventory items.</p>
+                </a>
+                <a class="dashboard-tile" th:href="@{/stock}">
+                    <h3>Stock Transactions</h3>
+                    <p>Record stock received or picked.</p>
+                </a>
+                <a class="dashboard-tile" th:href="@{/orders}">
+                    <h3>Orders</h3>
+                    <p>Create orders and update their status.</p>
+                </a>
+                <a class="dashboard-tile" th:href="@{/alerts}">
+                    <h3>Stock Alerts</h3>
+                    <p>Review low-stock and out-of-stock items.</p>
+                </a>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>
