@@ -37,6 +37,7 @@ pipeline {
                         echo ERROR: WAR file was not created.
                         exit /b 1
                     )
+                    echo WAR created successfully.
                 '''
             }
         }
@@ -54,8 +55,8 @@ pipeline {
 
                     if (Test-Path $pidFile) {
                         $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
-                        if ($oldPid) {
-                            taskkill /PID $oldPid /T /F 2>$null | Out-Null
+                        if ($oldPid -match '^\\d+$') {
+                            & taskkill.exe /PID ([int]$oldPid) /T /F 2>$null | Out-Null
                         }
                         Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
                     }
@@ -72,7 +73,6 @@ pipeline {
                         -PassThru
 
                     Set-Content -Path $pidFile -Value $proc.Id
-
                     $ready = $false
 
                     for ($i = 0; $i -lt 90; $i++) {
@@ -122,20 +122,32 @@ pipeline {
 
             post {
                 always {
-                    powershell '''
-                        $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
+                    powershell(
+                        returnStatus: true,
+                        script: '''
+                            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
 
-                        if (Test-Path $pidFile) {
-                            $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+                            try {
+                                if (Test-Path $pidFile) {
+                                    $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
 
-                            if ($appPid) {
-                                Write-Output "Stopping application launcher PID $appPid"
-                                taskkill /PID $appPid /T /F 2>$null | Out-Null
+                                    if ($appPid -and $appPid -match '^\\d+$') {
+                                        Write-Output "Stopping application launcher PID $appPid"
+                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
+                                        Write-Output "Cleanup attempted."
+                                    }
+
+                                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+                                } else {
+                                    Write-Output 'No application PID file found.'
+                                }
+                            } catch {
+                                Write-Output "Cleanup warning: $($_.Exception.Message)"
                             }
 
-                            Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-                        }
-                    '''
+                            exit 0
+                        '''
+                    )
                 }
             }
         }
@@ -143,11 +155,10 @@ pipeline {
         stage('Package Verification') {
             steps {
                 bat '''
-                    if not exist "%WORKSPACE%\\%WAR_FILE%" (
+                    if not exist "%WAR_FILE%" (
                         echo ERROR: Packaged WAR not found.
                         exit /b 1
                     )
-
                     echo WAR file verified successfully.
                 '''
 
@@ -181,6 +192,7 @@ pipeline {
                     withEnv(["DEPLOY_DIR=${deployDir}"]) {
                         bat '''
                             echo Checking WAR source...
+
                             if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
                                 echo ERROR: Source WAR not found.
                                 exit /b 1
@@ -208,35 +220,26 @@ pipeline {
         }
     }
 
-    
-            post {
-                always {
-                    powershell(
-                        returnStatus: true,
-                        script: '''
-                            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
+    post {
+        always {
+            junit(
+                testResults: 'target/surefire-reports/*.xml',
+                allowEmptyResults: false
+            )
 
-                            try {
-                                if (Test-Path $pidFile) {
-                                    $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+            archiveArtifacts(
+                artifacts: 'target/*.war,target/selenium-app*.log,target/selenium-screenshots/*.png',
+                allowEmptyArchive: true,
+                fingerprint: true
+            )
+        }
 
-                                    if ($appPid -and $appPid -match '^\\d+$') {
-                                        Write-Output "Attempting to stop application launcher PID $appPid"
-                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
-                                        Write-Output "Cleanup command finished with exit code $LASTEXITCODE"
-                                    }
+        success {
+            echo 'Pipeline succeeded. Tests passed; deployment ran if DEPLOY_ENV was test.'
+        }
 
-                                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-                                } else {
-                                    Write-Output 'No application PID file found; nothing to clean up.'
-                                }
-                            } catch {
-                                Write-Output "Cleanup warning: $($_.Exception.Message)"
-                            }
-
-                            exit 0
-                        '''
-                    )
-                }
-            }
-
+        failure {
+            echo 'Pipeline failed. Review the stage logs and test reports.'
+        }
+    }
+}
