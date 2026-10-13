@@ -1,5 +1,11 @@
+
 pipeline {
     agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
 
     parameters {
         choice(
@@ -26,92 +32,125 @@ pipeline {
         stage('Build Package') {
             steps {
                 bat 'mvn clean package -DskipTests'
-                bat 'if not exist "%WAR_FILE%" exit /b 1'
+                bat '''
+                    if not exist "%WAR_FILE%" (
+                        echo ERROR: WAR file was not created.
+                        exit /b 1
+                    )
+                '''
             }
         }
 
-        
-stage('Start Application for Selenium') {
-    steps {
-        powershell '''
-            $ErrorActionPreference = 'Stop'
-            $log = Join-Path $env:WORKSPACE 'target\\selenium-app.log'
-            $err = Join-Path $env:WORKSPACE 'target\\selenium-app-error.log'
-            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
+        stage('Start Application for Selenium') {
+            steps {
+                powershell '''
+                    $ErrorActionPreference = 'Stop'
+                    $target = Join-Path $env:WORKSPACE 'target'
+                    $log = Join-Path $target 'selenium-app.log'
+                    $err = Join-Path $target 'selenium-app-error.log'
+                    $pidFile = Join-Path $target 'selenium-app.pid'
 
-            New-Item -ItemType Directory -Force -Path (Join-Path $env:WORKSPACE 'target') | Out-Null
+                    New-Item -ItemType Directory -Force -Path $target | Out-Null
 
-            if (Test-Path $pidFile) {
-                $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
-                if ($oldPid) {
-                    taskkill /PID $oldPid /T /F 2>$null | Out-Null
-                }
-                Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-            }
-
-            $proc = Start-Process -FilePath 'cmd.exe' `
-                -ArgumentList '/c', 'mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"' `
-                -WorkingDirectory $env:WORKSPACE `
-                -RedirectStandardOutput $log `
-                -RedirectStandardError $err `
-                -PassThru
-
-            Set-Content -Path $pidFile -Value $proc.Id
-
-            $ready = $false
-            for ($i = 0; $i -lt 90; $i++) {
-                Start-Sleep -Seconds 2
-                $proc.Refresh()
-
-                if ($proc.HasExited) {
-                    Write-Output 'ERROR: Application launcher exited early.'
-                    if (Test-Path $log) { Get-Content $log -Tail 80 }
-                    if (Test-Path $err) { Get-Content $err -Tail 80 }
-                    exit 1
-                }
-
-                try {
-                    $response = Invoke-WebRequest `
-                        -Uri 'http://127.0.0.1:8081/items' `
-                        -UseBasicParsing -TimeoutSec 3
-
-                    if ($response.StatusCode -eq 200) {
-                        $ready = $true
-                        break
+                    if (Test-Path $pidFile) {
+                        $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+                        if ($oldPid) {
+                            taskkill /PID $oldPid /T /F 2>$null | Out-Null
+                        }
+                        Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
                     }
-                } catch {}
+
+                    Write-Output 'Starting Spring Boot on port 8081...'
+
+                    $proc = Start-Process `
+                        -FilePath 'cmd.exe' `
+                        -ArgumentList '/c', 'mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"' `
+                        -WorkingDirectory $env:WORKSPACE `
+                        -RedirectStandardOutput $log `
+                        -RedirectStandardError $err `
+                        -WindowStyle Hidden `
+                        -PassThru
+
+                    Set-Content -Path $pidFile -Value $proc.Id
+
+                    $ready = $false
+
+                    for ($i = 0; $i -lt 90; $i++) {
+                        Start-Sleep -Seconds 2
+                        $proc.Refresh()
+
+                        try {
+                            $response = Invoke-WebRequest `
+                                -Uri 'http://127.0.0.1:8081/items' `
+                                -UseBasicParsing `
+                                -TimeoutSec 3
+
+                            if ($response.StatusCode -eq 200) {
+                                $ready = $true
+                                break
+                            }
+                        } catch {}
+
+                        if ($proc.HasExited) {
+                            Write-Output 'Application launcher exited early.'
+                            break
+                        }
+                    }
+
+                    if (-not $ready) {
+                        Write-Output 'ERROR: Application did not become ready.'
+                        if (Test-Path $log) {
+                            Get-Content $log -Tail 80
+                        }
+                        if (Test-Path $err) {
+                            Get-Content $err -Tail 80
+                        }
+                        exit 1
+                    }
+
+                    Write-Output 'Application is responding on port 8081.'
+                    Write-Output 'Startup stage complete.'
+                    exit 0
+                '''
             }
-
-            if (-not $ready) {
-                Write-Output 'ERROR: Application did not become ready on port 8081.'
-                if (Test-Path $log) { Get-Content $log -Tail 100 }
-                if (Test-Path $err) { Get-Content $err -Tail 100 }
-                exit 1
-            }
-
-            Write-Output 'Application is responding on port 8081.'
-        '''
-    }
-}
-
+        }
 
         stage('Continuous Testing') {
-    steps {
-        bat 'mvn test'
-    }
+            steps {
+                bat 'mvn test'
+            }
 
-    post {
-        always {
-            bat '''
-                powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'; if (Test-Path $f) { $id = Get-Content $f; if ($id) { taskkill /PID $id /T /F 2>$null | Out-Null }; Remove-Item $f -Force -ErrorAction SilentlyContinue }"
-            '''
+            post {
+                always {
+                    powershell '''
+                        $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
+
+                        if (Test-Path $pidFile) {
+                            $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+
+                            if ($appPid) {
+                                Write-Output "Stopping application launcher PID $appPid"
+                                taskkill /PID $appPid /T /F 2>$null | Out-Null
+                            }
+
+                            Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+                        }
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Package Verification') {
             steps {
-                bat 'if not exist "%WAR_FILE%" exit /b 1'
+                bat '''
+                    if not exist "%WORKSPACE%\\%WAR_FILE%" (
+                        echo ERROR: Packaged WAR not found.
+                        exit /b 1
+                    )
+
+                    echo WAR file verified successfully.
+                '''
+
                 archiveArtifacts(
                     artifacts: 'target/*.war',
                     fingerprint: true
@@ -128,7 +167,8 @@ stage('Start Application for Selenium') {
 
             steps {
                 script {
-                    def deployDir = env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'
+                    def deployDir =
+                        env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'
 
                     if (!fileExists(env.WAR_FILE)) {
                         error("WAR file not found: ${env.WAR_FILE}")
@@ -138,21 +178,29 @@ stage('Start Application for Selenium') {
                         error("Tomcat deployment directory not found: ${deployDir}")
                     }
 
-                    bat '''
-    if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
-        echo ERROR: Source WAR not found
-        exit /b 1
-    )
+                    withEnv(["DEPLOY_DIR=${deployDir}"]) {
+                        bat '''
+                            echo Checking WAR source...
+                            if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
+                                echo ERROR: Source WAR not found.
+                                exit /b 1
+                            )
 
-    if not exist "C:\\Tomcat\\webapps" (
-        echo ERROR: Tomcat webapps folder not found
-        exit /b 1
-    )
+                            if not exist "%DEPLOY_DIR%" (
+                                echo ERROR: Tomcat webapps directory not found.
+                                exit /b 1
+                            )
 
-    copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "C:\\Tomcat\\webapps\\picking-dashboard.war"
+                            copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "%DEPLOY_DIR%\\picking-dashboard.war"
 
-    if errorlevel 1 exit /b 1
-'''
+                            if errorlevel 1 (
+                                echo ERROR: WAR deployment copy failed.
+                                exit /b 1
+                            )
+
+                            echo WAR copied successfully.
+                        '''
+                    }
 
                     echo "WAR deployed to ${deployDir}\\picking-dashboard.war"
                 }
@@ -175,11 +223,11 @@ stage('Start Application for Selenium') {
         }
 
         success {
-            echo 'Pipeline succeeded. Tests passed; deployment was allowed if DEPLOY_ENV was test.'
+            echo 'Pipeline succeeded. Tests passed; deployment ran if DEPLOY_ENV was test.'
         }
 
         failure {
-            echo 'Pipeline failed. Later stages, including deployment, will not run after a failed test stage.'
+            echo 'Pipeline failed. Review the stage logs and test reports. Deployment is skipped after earlier failures.'
         }
     }
 }
