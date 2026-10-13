@@ -48,30 +48,29 @@ pipeline {
                     $ErrorActionPreference = 'Stop'
                     $target = Join-Path $env:WORKSPACE 'target'
                     $log = Join-Path $target 'selenium-app.log'
-                    $pidFile = Join-Path $target 'selenium-app.pid'
                     $err = Join-Path $target 'selenium-app-error.log'
+                    $pidFile = Join-Path $target 'selenium-app.pid'
 
                     New-Item -ItemType Directory -Force -Path $target | Out-Null
-
-                    # Clear stale PID file; do not kill an unrelated process.
                     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
 
-                    # Run Maven with all streams redirected inside CMD.
-                    # START detaches the server from the Jenkins step.
-                    $command = 'start "" /B cmd.exe /c "mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081 > target\selenium-app.log 2> target\selenium-app-error.log < NUL"'
+                    Write-Output 'Launching Spring Boot on port 8081...'
 
-                    Write-Output 'Launching Spring Boot in a detached process...'
+                    # Use Start-Process with redirected streams.
+                    # Escape Windows paths from Groovy by avoiding them
+                    # inside the command string.
+                    $args = '/c start "" /B mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081'
                     $launcher = Start-Process `
                         -FilePath 'cmd.exe' `
-                        -ArgumentList '/c', $command `
+                        -ArgumentList $args `
                         -WorkingDirectory $env:WORKSPACE `
+                        -RedirectStandardOutput $log `
+                        -RedirectStandardError $err `
                         -WindowStyle Hidden `
-                        -Wait `
                         -PassThru
 
-                    Write-Output 'Detached launch command returned.'
+                    Write-Output "Launcher command returned. PID: $($launcher.Id)"
 
-                    # Discover the Java process listening on port 8081.
                     $ready = $false
                     $appPid = $null
 
@@ -101,7 +100,7 @@ pipeline {
                     }
 
                     if (-not $ready) {
-                        Write-Output 'ERROR: Spring Boot did not become ready.'
+                        Write-Output 'ERROR: Application did not become ready.'
                         if (Test-Path $log) {
                             Get-Content $log -Tail 80
                         }
@@ -116,7 +115,7 @@ pipeline {
                     }
 
                     Write-Output 'Application is responding on port 8081.'
-                    Write-Output 'Startup stage complete; returning to Jenkins.'
+                    Write-Output 'Startup stage complete.'
                 '''
             }
         }
@@ -138,14 +137,13 @@ pipeline {
                                     $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
 
                                     if ($appPid -and $appPid -match '^\\d+$') {
-                                        $process = Get-Process -Id ([int]$appPid) -ErrorAction SilentlyContinue
-                                        if ($process) {
-                                            Write-Output "Stopping application PID $appPid"
-                                            Stop-Process -Id ([int]$appPid) -Force -ErrorAction SilentlyContinue
-                                        }
+                                        Write-Output "Attempting to stop application PID $appPid"
+                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
                                     }
 
                                     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+                                } else {
+                                    Write-Output 'No application PID file found.'
                                 }
                             } catch {
                                 Write-Output "Cleanup warning: $($_.Exception.Message)"
