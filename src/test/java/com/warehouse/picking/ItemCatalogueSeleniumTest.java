@@ -48,9 +48,6 @@ class ItemCatalogueSeleniumTest {
         assertTrue(driver.findElement(By.name("search")).isDisplayed());
         assertEquals(5,
                 driver.findElements(By.cssSelector("tbody tr")).size());
-	org.junit.jupiter.api.Assertions.fail(
-    "Intentional Task 10 quality-gate demonstration"
-);
     }
 
     @Test
