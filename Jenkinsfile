@@ -94,10 +94,21 @@ pipeline {
                         error("Tomcat deployment directory not found: ${deployDir}")
                     }
 
-                    bat """
-                        copy /Y "%WORKSPACE%\\${env.WAR_FILE}" "${deployDir}\\picking-dashboard.war"
-                        if errorlevel 1 exit /b 1
-                    """
+                    bat '''
+    if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
+        echo ERROR: Source WAR not found
+        exit /b 1
+    )
+
+    if not exist "C:\\Tomcat\\webapps" (
+        echo ERROR: Tomcat webapps folder not found
+        exit /b 1
+    )
+
+    copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "C:\\Tomcat\\webapps\\picking-dashboard.war"
+
+    if errorlevel 1 exit /b 1
+'''
 
                     echo "WAR deployed to ${deployDir}\\picking-dashboard.war"
                 }
