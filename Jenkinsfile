@@ -52,10 +52,18 @@ pipeline {
         }
 
         stage('Continuous Testing') {
-            steps {
-                bat 'mvn test'
-            }
+    steps {
+        bat 'mvn test'
+    }
+
+    post {
+        always {
+            bat '''
+                powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'; if (Test-Path $f) { $id = Get-Content $f; if ($id) { taskkill /PID $id /T /F 2>$null | Out-Null }; Remove-Item $f -Force -ErrorAction SilentlyContinue }"
+            '''
         }
+    }
+}
 
         stage('Package Verification') {
             steps {
