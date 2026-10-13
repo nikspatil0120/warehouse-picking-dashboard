@@ -208,26 +208,35 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            junit(
-                testResults: 'target/surefire-reports/*.xml',
-                allowEmptyResults: false
-            )
+    
+            post {
+                always {
+                    powershell(
+                        returnStatus: true,
+                        script: '''
+                            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
 
-            archiveArtifacts(
-                artifacts: 'target/*.war,target/selenium-app*.log,target/selenium-screenshots/*.png',
-                allowEmptyArchive: true,
-                fingerprint: true
-            )
-        }
+                            try {
+                                if (Test-Path $pidFile) {
+                                    $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
 
-        success {
-            echo 'Pipeline succeeded. Tests passed; deployment ran if DEPLOY_ENV was test.'
-        }
+                                    if ($appPid -and $appPid -match '^\\d+$') {
+                                        Write-Output "Attempting to stop application launcher PID $appPid"
+                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
+                                        Write-Output "Cleanup command finished with exit code $LASTEXITCODE"
+                                    }
 
-        failure {
-            echo 'Pipeline failed. Review the stage logs and test reports. Deployment is skipped after earlier failures.'
-        }
-    }
-}
+                                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+                                } else {
+                                    Write-Output 'No application PID file found; nothing to clean up.'
+                                }
+                            } catch {
+                                Write-Output "Cleanup warning: $($_.Exception.Message)"
+                            }
+
+                            exit 0
+                        '''
+                    )
+                }
+            }
+
