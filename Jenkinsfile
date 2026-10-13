@@ -30,26 +30,70 @@ pipeline {
             }
         }
 
-        stage('Start Application for Selenium') {
-            steps {
-                bat '''
-                    if not exist target mkdir target
-                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081' -WorkingDirectory $env:WORKSPACE -RedirectStandardOutput (Join-Path $env:WORKSPACE 'target\\selenium-app.log') -RedirectStandardError (Join-Path $env:WORKSPACE 'target\\selenium-app-error.log') -PassThru; Set-Content -Path (Join-Path $env:WORKSPACE 'target\\selenium-app.pid') -Value $p.Id"
-                '''
+        
+stage('Start Application for Selenium') {
+    steps {
+        powershell '''
+            $ErrorActionPreference = 'Stop'
+            $log = Join-Path $env:WORKSPACE 'target\\selenium-app.log'
+            $err = Join-Path $env:WORKSPACE 'target\\selenium-app-error.log'
+            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
 
-                bat '''
-                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ready = $false; for ($i = 0; $i -lt 60; $i++) { try { $r = Invoke-WebRequest -Uri 'http://localhost:8081/items' -UseBasicParsing -TimeoutSec 2; if ($r.StatusCode -eq 200) { $ready = $true; break } } catch {}; Start-Sleep -Seconds 2 }; if (-not $ready) { Write-Error 'Application did not become ready on port 8081'; Get-Content (Join-Path $env:WORKSPACE 'target\\selenium-app.log') -ErrorAction SilentlyContinue; exit 1 }"
-                '''
-            }
+            New-Item -ItemType Directory -Force -Path (Join-Path $env:WORKSPACE 'target') | Out-Null
 
-            post {
-                always {
-                    bat '''
-                        powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'; if (Test-Path $f) { $id = Get-Content $f; if ($id) { taskkill /PID $id /T /F 2>$null | Out-Null }; Remove-Item $f -Force -ErrorAction SilentlyContinue }"
-                    '''
+            if (Test-Path $pidFile) {
+                $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
+                if ($oldPid) {
+                    taskkill /PID $oldPid /T /F 2>$null | Out-Null
                 }
+                Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
             }
-        }
+
+            $proc = Start-Process -FilePath 'cmd.exe' `
+                -ArgumentList '/c', 'mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"' `
+                -WorkingDirectory $env:WORKSPACE `
+                -RedirectStandardOutput $log `
+                -RedirectStandardError $err `
+                -PassThru
+
+            Set-Content -Path $pidFile -Value $proc.Id
+
+            $ready = $false
+            for ($i = 0; $i -lt 90; $i++) {
+                Start-Sleep -Seconds 2
+                $proc.Refresh()
+
+                if ($proc.HasExited) {
+                    Write-Output 'ERROR: Application launcher exited early.'
+                    if (Test-Path $log) { Get-Content $log -Tail 80 }
+                    if (Test-Path $err) { Get-Content $err -Tail 80 }
+                    exit 1
+                }
+
+                try {
+                    $response = Invoke-WebRequest `
+                        -Uri 'http://127.0.0.1:8081/items' `
+                        -UseBasicParsing -TimeoutSec 3
+
+                    if ($response.StatusCode -eq 200) {
+                        $ready = $true
+                        break
+                    }
+                } catch {}
+            }
+
+            if (-not $ready) {
+                Write-Output 'ERROR: Application did not become ready on port 8081.'
+                if (Test-Path $log) { Get-Content $log -Tail 100 }
+                if (Test-Path $err) { Get-Content $err -Tail 100 }
+                exit 1
+            }
+
+            Write-Output 'Application is responding on port 8081.'
+        '''
+    }
+}
+
 
         stage('Continuous Testing') {
     steps {
