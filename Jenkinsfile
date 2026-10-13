@@ -42,80 +42,27 @@ pipeline {
             }
         }
 
-        stage('Start Application for Selenium') {
+        stage('Verify Application') {
             steps {
                 powershell '''
-                    $ErrorActionPreference = 'Stop'
-                    $target = Join-Path $env:WORKSPACE 'target'
-                    $log = Join-Path $target 'selenium-app.log'
-                    $err = Join-Path $target 'selenium-app-error.log'
-                    $pidFile = Join-Path $target 'selenium-app.pid'
+                    $url = 'http://127.0.0.1:8081/items'
 
-                    New-Item -ItemType Directory -Force -Path $target | Out-Null
-                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
+                    try {
+                        $response = Invoke-WebRequest `
+                            -Uri $url `
+                            -UseBasicParsing `
+                            -TimeoutSec 5
 
-                    Write-Output 'Launching Spring Boot on port 8081...'
-
-                    # Use Start-Process with redirected streams.
-                    # Escape Windows paths from Groovy by avoiding them
-                    # inside the command string.
-                    $args = '/c start "" /B mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081'
-                    $launcher = Start-Process `
-                        -FilePath 'cmd.exe' `
-                        -ArgumentList $args `
-                        -WorkingDirectory $env:WORKSPACE `
-                        -RedirectStandardOutput $log `
-                        -RedirectStandardError $err `
-                        -WindowStyle Hidden `
-                        -PassThru
-
-                    Write-Output "Launcher command returned. PID: $($launcher.Id)"
-
-                    $ready = $false
-                    $appPid = $null
-
-                    for ($i = 0; $i -lt 90; $i++) {
-                        Start-Sleep -Seconds 2
-
-                        try {
-                            $response = Invoke-WebRequest `
-                                -Uri 'http://127.0.0.1:8081/items' `
-                                -UseBasicParsing `
-                                -TimeoutSec 3
-
-                            if ($response.StatusCode -eq 200) {
-                                $ready = $true
-                                $connection = Get-NetTCPConnection `
-                                    -LocalPort 8081 `
-                                    -State Listen `
-                                    -ErrorAction SilentlyContinue |
-                                    Select-Object -First 1
-
-                                if ($connection) {
-                                    $appPid = $connection.OwningProcess
-                                }
-                                break
-                            }
-                        } catch {}
-                    }
-
-                    if (-not $ready) {
-                        Write-Output 'ERROR: Application did not become ready.'
-                        if (Test-Path $log) {
-                            Get-Content $log -Tail 80
+                        if ($response.StatusCode -ne 200) {
+                            throw "Unexpected HTTP status: $($response.StatusCode)"
                         }
-                        if (Test-Path $err) {
-                            Get-Content $err -Tail 80
-                        }
+
+                        Write-Output 'Manually started application is responding.'
+                    } catch {
+                        Write-Output 'ERROR: Start the application manually in CMD first.'
+                        Write-Output 'Command: mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"'
                         exit 1
                     }
-
-                    if ($appPid) {
-                        Set-Content -Path $pidFile -Value $appPid
-                    }
-
-                    Write-Output 'Application is responding on port 8081.'
-                    Write-Output 'Startup stage complete.'
                 '''
             }
         }
@@ -123,36 +70,6 @@ pipeline {
         stage('Continuous Testing') {
             steps {
                 bat 'mvn test'
-            }
-
-            post {
-                always {
-                    powershell(
-                        returnStatus: true,
-                        script: '''
-                            $pidFile = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'
-
-                            try {
-                                if (Test-Path $pidFile) {
-                                    $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
-
-                                    if ($appPid -and $appPid -match '^\\d+$') {
-                                        Write-Output "Attempting to stop application PID $appPid"
-                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
-                                    }
-
-                                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-                                } else {
-                                    Write-Output 'No application PID file found.'
-                                }
-                            } catch {
-                                Write-Output "Cleanup warning: $($_.Exception.Message)"
-                            }
-
-                            exit 0
-                        '''
-                    )
-                }
             }
         }
 
@@ -230,7 +147,7 @@ pipeline {
             )
 
             archiveArtifacts(
-                artifacts: 'target/*.war,target/selenium-app*.log,target/selenium-screenshots/*.png',
+                artifacts: 'target/*.war,target/selenium-screenshots/*.png',
                 allowEmptyArchive: true,
                 fingerprint: true
             )
