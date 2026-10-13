@@ -48,36 +48,35 @@ pipeline {
                     $ErrorActionPreference = 'Stop'
                     $target = Join-Path $env:WORKSPACE 'target'
                     $log = Join-Path $target 'selenium-app.log'
-                    $err = Join-Path $target 'selenium-app-error.log'
                     $pidFile = Join-Path $target 'selenium-app.pid'
+                    $err = Join-Path $target 'selenium-app-error.log'
 
                     New-Item -ItemType Directory -Force -Path $target | Out-Null
 
-                    if (Test-Path $pidFile) {
-                        $oldPid = Get-Content $pidFile -ErrorAction SilentlyContinue
-                        if ($oldPid -match '^\\d+$') {
-                            & taskkill.exe /PID ([int]$oldPid) /T /F 2>$null | Out-Null
-                        }
-                        Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-                    }
+                    # Clear stale PID file; do not kill an unrelated process.
+                    Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
 
-                    Write-Output 'Starting Spring Boot on port 8081...'
+                    # Run Maven with all streams redirected inside CMD.
+                    # START detaches the server from the Jenkins step.
+                    $command = 'start "" /B cmd.exe /c "mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081 > target\selenium-app.log 2> target\selenium-app-error.log < NUL"'
 
-                    $proc = Start-Process `
+                    Write-Output 'Launching Spring Boot in a detached process...'
+                    $launcher = Start-Process `
                         -FilePath 'cmd.exe' `
-                        -ArgumentList '/c', 'mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"' `
+                        -ArgumentList '/c', $command `
                         -WorkingDirectory $env:WORKSPACE `
-                        -RedirectStandardOutput $log `
-                        -RedirectStandardError $err `
                         -WindowStyle Hidden `
+                        -Wait `
                         -PassThru
 
-                    Set-Content -Path $pidFile -Value $proc.Id
+                    Write-Output 'Detached launch command returned.'
+
+                    # Discover the Java process listening on port 8081.
                     $ready = $false
+                    $appPid = $null
 
                     for ($i = 0; $i -lt 90; $i++) {
                         Start-Sleep -Seconds 2
-                        $proc.Refresh()
 
                         try {
                             $response = Invoke-WebRequest `
@@ -87,18 +86,22 @@ pipeline {
 
                             if ($response.StatusCode -eq 200) {
                                 $ready = $true
+                                $connection = Get-NetTCPConnection `
+                                    -LocalPort 8081 `
+                                    -State Listen `
+                                    -ErrorAction SilentlyContinue |
+                                    Select-Object -First 1
+
+                                if ($connection) {
+                                    $appPid = $connection.OwningProcess
+                                }
                                 break
                             }
                         } catch {}
-
-                        if ($proc.HasExited) {
-                            Write-Output 'Application launcher exited early.'
-                            break
-                        }
                     }
 
                     if (-not $ready) {
-                        Write-Output 'ERROR: Application did not become ready.'
+                        Write-Output 'ERROR: Spring Boot did not become ready.'
                         if (Test-Path $log) {
                             Get-Content $log -Tail 80
                         }
@@ -108,8 +111,12 @@ pipeline {
                         exit 1
                     }
 
+                    if ($appPid) {
+                        Set-Content -Path $pidFile -Value $appPid
+                    }
+
                     Write-Output 'Application is responding on port 8081.'
-		    Write-Output 'Startup stage complete.'
+                    Write-Output 'Startup stage complete; returning to Jenkins.'
                 '''
             }
         }
@@ -131,14 +138,14 @@ pipeline {
                                     $appPid = Get-Content $pidFile -ErrorAction SilentlyContinue
 
                                     if ($appPid -and $appPid -match '^\\d+$') {
-                                        Write-Output "Stopping application launcher PID $appPid"
-                                        & taskkill.exe /PID ([int]$appPid) /T /F 2>$null
-                                        Write-Output "Cleanup attempted."
+                                        $process = Get-Process -Id ([int]$appPid) -ErrorAction SilentlyContinue
+                                        if ($process) {
+                                            Write-Output "Stopping application PID $appPid"
+                                            Stop-Process -Id ([int]$appPid) -Force -ErrorAction SilentlyContinue
+                                        }
                                     }
 
                                     Remove-Item $pidFile -Force -ErrorAction SilentlyContinue
-                                } else {
-                                    Write-Output 'No application PID file found.'
                                 }
                             } catch {
                                 Write-Output "Cleanup warning: $($_.Exception.Message)"
@@ -190,8 +197,6 @@ pipeline {
 
                     withEnv(["DEPLOY_DIR=${deployDir}"]) {
                         bat '''
-                            echo Checking WAR source...
-
                             if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
                                 echo ERROR: Source WAR not found.
                                 exit /b 1
@@ -238,7 +243,7 @@ pipeline {
         }
 
         failure {
-            echo 'Pipeline failed. Review the stage logs and test reports.'
+            echo 'Pipeline failed. Review the failed stage and test reports.'
         }
     }
 }
