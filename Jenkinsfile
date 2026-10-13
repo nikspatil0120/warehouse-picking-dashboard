@@ -109,8 +109,7 @@ pipeline {
                     }
 
                     Write-Output 'Application is responding on port 8081.'
-                    Write-Output 'Startup stage complete.'
-                    exit 0
+		    Write-Output 'Startup stage complete.'
                 '''
             }
         }
