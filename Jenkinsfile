@@ -11,7 +11,7 @@ pipeline {
         choice(
             name: 'DEPLOY_ENV',
             choices: ['local', 'test'],
-            description: 'Choose local build or Tomcat test deployment'
+            description: 'local = build image only; test = publish and deploy Docker container'
         )
     }
 
@@ -19,6 +19,10 @@ pipeline {
         APP_NAME = 'picking-dashboard'
         WAR_FILE = 'target/picking-dashboard-0.0.1-SNAPSHOT.war'
         SELENIUM_APP_PORT = '8081'
+        DOCKERHUB_REPO = 'ryusseikun/picking-dashboard'
+        CONTAINER_NAME = 'picking-dashboard-container'
+        HOST_PORT = '8083'
+        CONTAINER_PORT = '8080'
     }
 
     stages {
@@ -32,6 +36,7 @@ pipeline {
         stage('Build Package') {
             steps {
                 bat 'mvn clean package -DskipTests'
+
                 bat '''
                     if not exist "%WAR_FILE%" (
                         echo ERROR: WAR file was not created.
@@ -57,10 +62,10 @@ pipeline {
                             throw "Unexpected HTTP status: $($response.StatusCode)"
                         }
 
-                        Write-Output 'Manually started application is responding.'
+                        Write-Output 'Application verification passed.'
                     } catch {
-                        Write-Output 'ERROR: Start the application manually in CMD first.'
-                        Write-Output 'Command: mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"'
+                        Write-Output 'ERROR: Application check on port 8081 failed.'
+                        Write-Output 'Start the application before running this pipeline.'
                         exit 1
                     }
                 '''
@@ -90,51 +95,101 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Docker Build') {
+            steps {
+                bat '''
+                    docker build -t "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%" .
+                    if errorlevel 1 exit /b 1
+
+                    docker image inspect "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+        }
+
+        stage('Docker Hub Push') {
             when {
-                expression {
-                    return params.DEPLOY_ENV == 'test'
+                expression { params.DEPLOY_ENV == 'test' }
+            }
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
+                ]) {
+                    bat '''
+                        @echo off
+                        powershell -NoProfile -Command "$env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin"
+                        if errorlevel 1 exit /b 1
+
+                        docker push "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"
+                        if errorlevel 1 (
+                            docker logout
+                            exit /b 1
+                        )
+
+                        docker logout
+                    '''
                 }
             }
+        }
 
+        stage('Deploy Container') {
+            when {
+                expression { params.DEPLOY_ENV == 'test' }
+            }
             steps {
-                script {
-                    def deployDir =
-                        env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'
+                bat '''
+                    docker pull "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"
+                    if errorlevel 1 exit /b 1
 
-                    if (!fileExists(env.WAR_FILE)) {
-                        error("WAR file not found: ${env.WAR_FILE}")
+                    docker stop "%CONTAINER_NAME%" 2>NUL
+                    docker rm "%CONTAINER_NAME%" 2>NUL
+
+                    docker run -d --name "%CONTAINER_NAME%" -p %HOST_PORT%:%CONTAINER_PORT% "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"
+                    if errorlevel 1 exit /b 1
+
+                    docker ps
+                    docker logs --tail 100 "%CONTAINER_NAME%"
+                '''
+            }
+        }
+
+        stage('Verify Docker Deployment') {
+            when {
+                expression { params.DEPLOY_ENV == 'test' }
+            }
+            steps {
+                powershell '''
+                    $url = 'http://127.0.0.1:8083/'
+                    $success = $false
+
+                    for ($i = 1; $i -le 30; $i++) {
+                        try {
+                            $response = Invoke-WebRequest `
+                                -Uri $url `
+                                -UseBasicParsing `
+                                -TimeoutSec 5
+
+                            if ($response.StatusCode -eq 200) {
+                                $success = $true
+                                break
+                            }
+                        } catch {
+                            Start-Sleep -Seconds 2
+                        }
                     }
 
-                    if (!fileExists(deployDir)) {
-                        error("Tomcat deployment directory not found: ${deployDir}")
+                    if (-not $success) {
+                        Write-Output 'ERROR: Docker application did not return HTTP 200.'
+                        docker logs --tail 100 picking-dashboard-container
+                        exit 1
                     }
 
-                    withEnv(["DEPLOY_DIR=${deployDir}"]) {
-                        bat '''
-                            if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" (
-                                echo ERROR: Source WAR not found.
-                                exit /b 1
-                            )
-
-                            if not exist "%DEPLOY_DIR%" (
-                                echo ERROR: Tomcat webapps directory not found.
-                                exit /b 1
-                            )
-
-                            copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "%DEPLOY_DIR%\\picking-dashboard.war"
-
-                            if errorlevel 1 (
-                                echo ERROR: WAR deployment copy failed.
-                                exit /b 1
-                            )
-
-                            echo WAR copied successfully.
-                        '''
-                    }
-
-                    echo "WAR deployed to ${deployDir}\\picking-dashboard.war"
-                }
+                    Write-Output 'Docker deployment verified: HTTP 200.'
+                '''
             }
         }
     }
@@ -154,7 +209,7 @@ pipeline {
         }
 
         success {
-            echo 'Pipeline succeeded. Tests passed; deployment ran if DEPLOY_ENV was test.'
+            echo "Pipeline succeeded for DEPLOY_ENV=${params.DEPLOY_ENV}."
         }
 
         failure {
