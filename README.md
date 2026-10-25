@@ -23,12 +23,13 @@ A Spring Boot 3.5.16 warehouse management system with MongoDB persistence, Sprin
 ## Prerequisites
 
 - Java 17+
-- MongoDB running locally on `localhost:27017`
 - Maven 3.6+
+- MongoDB Atlas account (for cloud development) OR local MongoDB instance (optional)
+- Modern web browser for UI access
 
 ## Setup & Run Locally
 
-### 1. Start MongoDB
+### 1. MongoDB Setup (Skip if using Atlas)
 
 ```bash
 # Using Docker
@@ -37,6 +38,8 @@ docker run -d -p 27017:27017 --name mongodb mongo:7.0
 # Or if you have MongoDB installed locally
 mongod
 ```
+
+Then update `application.properties` to use local MongoDB (see Database Configuration section).
 
 ### 2. Build the Project
 
@@ -65,6 +68,8 @@ Open your browser and go to:
 http://localhost:8081
 ```
 
+The application will automatically create default users on first run (see Default Users section below).
+
 ## Default Users
 
 The application creates a default admin user on startup:
@@ -75,7 +80,30 @@ The application creates a default admin user on startup:
 
 ## Database Configuration
 
-MongoDB is configured to run on `localhost:27017` by default.
+### Development (Default)
+
+MongoDB Atlas is configured for development:
+- **Database**: `warehouse_dev`
+- **Connection**: MongoDB Atlas cluster (cloud)
+- **Collections created automatically** on first run
+
+Configuration in `application.properties`:
+```properties
+spring.data.mongodb.uri=mongodb+srv://nikhilpatil0120_db_user:...@cluster0.oj279ep.mongodb.net/warehouse_dev?retryWrites=true&w=majority
+spring.data.mongodb.auto-index-creation=true
+```
+
+### Local Development (Optional)
+
+To use a local MongoDB instead, update `application.properties`:
+```properties
+spring.data.mongodb.uri=mongodb://localhost:27017/warehouse
+```
+
+Then start MongoDB locally:
+```bash
+docker run -d -p 27017:27017 --name mongodb mongo:7.0
+```
 
 ### Collections
 
