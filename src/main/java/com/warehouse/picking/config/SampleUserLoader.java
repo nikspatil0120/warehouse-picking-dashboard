@@ -5,10 +5,7 @@ import com.warehouse.picking.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-
 @Configuration
-@Profile("dev")
 public class SampleUserLoader {
 
     @Bean
@@ -21,6 +18,7 @@ public class SampleUserLoader {
                         "admin@warehouse.local",
                         "admin123"
                 );
+                System.out.println("✅ Default admin user created: admin / admin123");
 
                 // Create sample customer users
                 try {
@@ -29,6 +27,7 @@ public class SampleUserLoader {
                             "customer1@example.com",
                             "customer123"
                     );
+                    System.out.println("✅ Sample customer user 1 created");
                 } catch (IllegalArgumentException e) {
                     // Ignore if already exists
                 }
@@ -39,6 +38,7 @@ public class SampleUserLoader {
                             "customer2@example.com",
                             "customer123"
                     );
+                    System.out.println("✅ Sample customer user 2 created");
                 } catch (IllegalArgumentException e) {
                     // Ignore if already exists
                 }
