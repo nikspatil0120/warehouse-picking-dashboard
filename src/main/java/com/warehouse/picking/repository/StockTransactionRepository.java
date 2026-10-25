@@ -1,13 +1,13 @@
-
 package com.warehouse.picking.repository;
 
 import com.warehouse.picking.model.StockTransaction;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface StockTransactionRepository
-        extends JpaRepository<StockTransaction, Long> {
+@Repository
+public interface StockTransactionRepository extends MongoRepository<StockTransaction, String> {
 
     List<StockTransaction> findAllByOrderByCreatedAtDesc();
 }

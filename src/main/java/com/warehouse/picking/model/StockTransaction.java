@@ -1,22 +1,15 @@
 
 package com.warehouse.picking.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "stock_transaction")
+@Document(collection = "stock_transactions")
 public class StockTransaction {
 
     public enum TransactionType {
@@ -25,16 +18,13 @@ public class StockTransaction {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @NotNull(message = "Item is required")
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "item_id", nullable = false)
+    @DBRef
     private Item item;
 
     @NotNull(message = "Transaction type is required")
-    @Enumerated(EnumType.STRING)
     private TransactionType type;
 
     @Min(value = 1, message = "Transaction quantity must be at least 1")
@@ -59,11 +49,11 @@ public class StockTransaction {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

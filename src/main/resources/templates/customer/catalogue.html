@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Product Catalogue - Warehouse Portal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Product Catalogue</p>
+        </div>
+        <div style="color: white; text-align: right;">
+            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
+        </div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/customer}">Home</a>
+        <a th:href="@{/customer/catalogue}">Browse Items</a>
+        <a th:href="@{/customer/order-form}">Place Order</a>
+        <a th:href="@{/customer/my-orders}">My Orders</a>
+    </nav>
+    <main class="content">
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Product Catalogue</h2>
+                    <p>Browse available items and their current stock levels.</p>
+                </div>
+                <div class="item-count" th:text="'Total: ' + ${#lists.size(items)} + ' items'"></div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Available</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${items}">
+                        <td><span class="sku" th:text="${item.sku}">SKU-001</span></td>
+                        <td class="item-name" th:text="${item.name}">Item Name</td>
+                        <td th:text="${item.location}">Location</td>
+                        <td>
+                            <span th:if="${item.quantity > 0}" th:text="${item.quantity}" class="quantity"></span>
+                            <span th:if="${item.quantity == 0}" class="status status-danger">Out of Stock</span>
+                        </td>
+                        <td>
+                            <a th:if="${item.quantity > 0}" 
+                               th:href="@{/customer/order-form(itemId=${item.id})}" 
+                               class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
+                                Order
+                            </a>
+                            <span th:if="${item.quantity == 0}" class="status status-danger">Unavailable</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(items)}">
+                        <td colspan="5">No items available.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>

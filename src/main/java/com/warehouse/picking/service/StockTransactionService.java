@@ -26,7 +26,7 @@ public class StockTransactionService {
 
     @Transactional
     public StockTransaction recordTransaction(
-            Long itemId,
+            String itemId,
             TransactionType type,
             int quantity,
             String notes) {

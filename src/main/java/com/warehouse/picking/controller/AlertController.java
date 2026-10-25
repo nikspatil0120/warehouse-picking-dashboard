@@ -2,6 +2,7 @@
 package com.warehouse.picking.controller;
 
 import com.warehouse.picking.repository.ItemRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/alerts")
+@PreAuthorize("hasRole('WAREHOUSE_ADMIN')")
 public class AlertController {
 
     private final ItemRepository itemRepository;

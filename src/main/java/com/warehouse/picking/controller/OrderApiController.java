@@ -45,7 +45,7 @@ public class OrderApiController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<?> updateStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @Valid @RequestBody UpdateStatusRequest request) {
         try {
             CustomerOrder order =
@@ -60,7 +60,7 @@ public class OrderApiController {
 
     public record CreateOrderRequest(
             @NotNull(message = "Item ID is required")
-            Long itemId,
+            String itemId,
 
             @Min(value = 1, message = "Quantity must be at least 1")
             int quantity) {

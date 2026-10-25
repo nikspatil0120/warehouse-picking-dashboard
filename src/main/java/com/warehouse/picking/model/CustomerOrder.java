@@ -1,14 +1,15 @@
 
 package com.warehouse.picking.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "customer_order")
+@Document(collection = "customer_orders")
 public class CustomerOrder {
 
     public enum OrderStatus {
@@ -19,23 +20,23 @@ public class CustomerOrder {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+
+    @DBRef
+    private User customer;
 
     @NotNull(message = "Item is required")
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "item_id", nullable = false)
+    @DBRef
     private Item item;
 
     @Min(value = 1, message = "Order quantity must be at least 1")
     private int quantity;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
-    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    private LocalDateTime updatedAt;
 
     public CustomerOrder() {
     }
@@ -47,12 +48,28 @@ public class CustomerOrder {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Long getId() {
+    public CustomerOrder(User customer, Item item, int quantity) {
+        this.customer = customer;
+        this.item = item;
+        this.quantity = quantity;
+        this.status = OrderStatus.PENDING;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public User getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(User customer) {
+        this.customer = customer;
     }
 
     public Item getItem() {
@@ -77,6 +94,7 @@ public class CustomerOrder {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public LocalDateTime getCreatedAt() {
@@ -85,5 +103,13 @@ public class CustomerOrder {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -1,9 +1,11 @@
 package com.warehouse.picking.repository;
 
 import com.warehouse.picking.model.Item;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
 
-public interface ItemRepository extends JpaRepository<Item, Long> {
+@Repository
+public interface ItemRepository extends MongoRepository<Item, String> {
 
     boolean existsBySku(String sku);
 }

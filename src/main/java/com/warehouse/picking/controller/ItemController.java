@@ -5,6 +5,7 @@ import com.warehouse.picking.model.Item;
 import com.warehouse.picking.service.ItemService;
 import com.warehouse.picking.repository.ItemRepository;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,6 +17,7 @@ import java.util.Locale;
 
 @Controller
 @RequestMapping("/items")
+@PreAuthorize("hasRole('WAREHOUSE_ADMIN')")
 public class ItemController {
 
     private final ItemService service;

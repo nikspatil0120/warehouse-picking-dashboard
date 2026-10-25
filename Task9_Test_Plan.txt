@@ -1,0 +1,30 @@
+TASK 9: SELENIUM TEST DESIGN AND LOCAL EXECUTION
+
+Project: Warehouse Picking Dashboard
+
+Testing Tools:
+- Selenium WebDriver 4
+- JUnit 5
+- Maven
+- Chrome browser
+
+Test Plan:
+
+TC01 — Item Catalogue Loading
+Objective: Verify the item catalogue page loads correctly.
+Expected Result: Page title, catalogue heading, search field, and five items are displayed.
+
+TC02 — Item Search
+Objective: Verify users can search for an item by name.
+Test Data: HDMI Adapter
+Expected Result: HDMI Adapter is displayed and unrelated items are filtered out.
+
+TC03 — Add Item Form
+Objective: Verify the Add Item form opens correctly.
+Expected Result: SKU, item name, and Save Item controls are visible.
+
+Failure Handling:
+Capture a browser screenshot automatically when a Selenium test fails.
+
+Test Execution:
+Run the automated tests using Maven and review the Surefire test report.

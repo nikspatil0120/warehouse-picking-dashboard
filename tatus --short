@@ -1,0 +1,199 @@
+[1mdiff --git a/Jenkinsfile b/Jenkinsfile[m
+[1mindex c010881..859d896 100644[m
+[1m--- a/Jenkinsfile[m
+[1m+++ b/Jenkinsfile[m
+[36m@@ -11,7 +11,7 @@[m [mpipeline {[m
+         choice([m
+             name: 'DEPLOY_ENV',[m
+             choices: ['local', 'test'],[m
+[31m-            description: 'Choose local build or Tomcat test deployment'[m
+[32m+[m[32m            description: 'local = build image only; test = publish and deploy Docker container'[m
+         )[m
+     }[m
+ [m
+[36m@@ -19,6 +19,10 @@[m [mpipeline {[m
+         APP_NAME = 'picking-dashboard'[m
+         WAR_FILE = 'target/picking-dashboard-0.0.1-SNAPSHOT.war'[m
+         SELENIUM_APP_PORT = '8081'[m
+[32m+[m[32m        DOCKERHUB_REPO = 'ryusseikun/picking-dashboard'[m
+[32m+[m[32m        CONTAINER_NAME = 'picking-dashboard-container'[m
+[32m+[m[32m        HOST_PORT = '8083'[m
+[32m+[m[32m        CONTAINER_PORT = '8080'[m
+     }[m
+ [m
+     stages {[m
+[36m@@ -32,6 +36,7 @@[m [mpipeline {[m
+         stage('Build Package') {[m
+             steps {[m
+                 bat 'mvn clean package -DskipTests'[m
+[32m+[m
+                 bat '''[m
+                     if not exist "%WAR_FILE%" ([m
+                         echo ERROR: WAR file was not created.[m
+[36m@@ -57,10 +62,10 @@[m [mpipeline {[m
+                             throw "Unexpected HTTP status: $($response.StatusCode)"[m
+                         }[m
+ [m
+[31m-                        Write-Output 'Manually started application is responding.'[m
+[32m+[m[32m                        Write-Output 'Application verification passed.'[m
+                     } catch {[m
+[31m-                        Write-Output 'ERROR: Start the application manually in CMD first.'[m
+[31m-                        Write-Output 'Command: mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8081"'[m
+[32m+[m[32m                        Write-Output 'ERROR: Application check on port 8081 failed.'[m
+[32m+[m[32m                        Write-Output 'Start the application before running this pipeline.'[m
+                         exit 1[m
+                     }[m
+                 '''[m
+[36m@@ -90,51 +95,110 @@[m [mpipeline {[m
+             }[m
+         }[m
+ [m
+[31m-        stage('Deploy') {[m
+[32m+[m[32m        stage('Docker Build') {[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                bat '''[m
+[32m+[m[32m                    docker build -t "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%" .[m
+[32m+[m[32m                    if errorlevel 1 exit /b 1[m
+[32m+[m
+[32m+[m[32m                    docker image inspect "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"[m
+[32m+[m[32m                    if errorlevel 1 exit /b 1[m
+[32m+[m[32m                '''[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        stage('Docker Hub Push') {[m
+             when {[m
+[31m-                expression {[m
+[31m-                    return params.DEPLOY_ENV == 'test'[m
+[32m+[m[32m                expression { params.DEPLOY_ENV == 'test' }[m
+[32m+[m[32m            }[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                withCredentials([[m
+[32m+[m[32m                    usernamePassword([m
+[32m+[m[32m                        credentialsId: 'dockerhub-creds',[m
+[32m+[m[32m                        usernameVariable: 'DOCKER_USER',[m
+[32m+[m[32m                        passwordVariable: 'DOCKER_TOKEN'[m
+[32m+[m[32m                    )[m
+[32m+[m[32m                ]) {[m
+[32m+[m[32m                    bat '''[m
+[32m+[m[32m                        @echo off[m
+[32m+[m[32m                        echo %DOCKER_TOKEN%| docker login -u "%DOCKER_USER%" --password-stdin[m
+[32m+[m[32m                        if errorlevel 1 exit /b 1[m
+[32m+[m
+[32m+[m[32m                        docker push "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"[m
+[32m+[m[32m                        if errorlevel 1 ([m
+[32m+[m[32m                            docker logout[m
+[32m+[m[32m                            exit /b 1[m
+[32m+[m[32m                        )[m
+[32m+[m
+[32m+[m[32m                        docker logout[m
+[32m+[m[32m                    '''[m
+                 }[m
+             }[m
+[32m+[m[32m        }[m
+ [m
+[32m+[m[32m        stage('Deploy Container') {[m
+[32m+[m[32m            when {[m
+[32m+[m[32m                expression { params.DEPLOY_ENV == 'test' }[m
+[32m+[m[32m            }[m
+             steps {[m
+[31m-                script {[m
+[31m-                    def deployDir =[m
+[31m-                        env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'[m
+[31m-[m
+[31m-                    if (!fileExists(env.WAR_FILE)) {[m
+[31m-                        error("WAR file not found: ${env.WAR_FILE}")[m
+[31m-                    }[m
+[31m-[m
+[31m-                    if (!fileExists(deployDir)) {[m
+[31m-                        error("Tomcat deployment directory not found: ${deployDir}")[m
+[31m-                    }[m
+[32m+[m[32m                bat '''[m
+[32m+[m[32m                    docker pull "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"[m
+[32m+[m[32m                    if errorlevel 1 exit /b 1[m
+ [m
+[31m-                    withEnv(["DEPLOY_DIR=${deployDir}"]) {[m
+[31m-                        bat '''[m
+[31m-                            if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" ([m
+[31m-                                echo ERROR: Source WAR not found.[m
+[31m-                                exit /b 1[m
+[31m-                            )[m
+[32m+[m[32m                    docker stop "%CONTAINER_NAME%" 2>NUL[m
+[32m+[m[32m                    docker rm "%CONTAINER_NAME%" 2>NUL[m
+ [m
+[31m-                            if not exist "%DEPLOY_DIR%" ([m
+[31m-                                echo ERROR: Tomcat webapps directory not found.[m
+[31m-                                exit /b 1[m
+[31m-                            )[m
+[32m+[m[32m                    docker run -d --name "%CONTAINER_NAME%" -p %HOST_PORT%:%CONTAINER_PORT% "%DOCKERHUB_REPO%:build-%BUILD_NUMBER%"[m
+[32m+[m[32m                    if errorlevel 1 exit /b 1[m
+ [m
+[31m-                            copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "%DEPLOY_DIR%\\picking-dashboard.war"[m
+[32m+[m[32m                    docker ps[m
+[32m+[m[32m                    docker logs --tail 100 "%CONTAINER_NAME%"[m
+[32m+[m[32m                '''[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+ [m
+[31m-                            if errorlevel 1 ([m
+[31m-                                echo ERROR: WAR deployment copy failed.[m
+[31m-                                exit /b 1[m
+[31m-                            )[m
+[32m+[m[32m        stage('Verify Docker Deployment') {[m
+[32m+[m[32m            when {[m
+[32m+[m[32m                expression { params.DEPLOY_ENV == 'test' }[m
+[32m+[m[32m            }[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                powershell '''[m
+[32m+[m[32m                    $url = 'http://127.0.0.1:8083/'[m
+[32m+[m[32m                    $success = $false[m
+[32m+[m
+[32m+[m[32m                    for ($i = 1; $i -le 30; $i++) {[m
+[32m+[m[32m                        try {[m
+[32m+[m[32m                            $response = Invoke-WebRequest `[m
+[32m+[m[32m                                -Uri $url `[m
+[32m+[m[32m                                -UseBasicParsing `[m
+[32m+[m[32m                                -TimeoutSec 5[m
+[32m+[m
+[32m+[m[32m                            if ($response.StatusCode -eq 200) {[m
+[32m+[m[32m                                $success = $true[m
+[32m+[m[32m                                break[m
+[32m+[m[32m                            }[m
+[32m+[m[32m                        } catch {[m
+[32m+[m[32m                            Start-Sleep -Seconds 2[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                    }[m
+ [m
+[31m-                            echo WAR copied successfully.[m
+[31m-                        '''[m
+[32m+[m[32m                    if (-not $success) {[m
+[32m+[m[32m                        Write-Output 'ERROR: Docker application did not return HTTP 200.'[m
+[32m+[m[32m                        docker logs --tail 100 picking-dashboard-container[m
+[32m+[m[32m                        exit 1[m
+                     }[m
+ [m
+[31m-                    echo "WAR deployed to ${deployDir}\\picking-dashboard.war"[m
+[31m-                }[m
+[32m+[m[32m                    Write-Output 'Docker deployment verified: HTTP 200.'[m
+[32m+[m[32m                '''[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        stage('Deploy to Standalone Tomcat') {[m
+[32m+[m[32m            when {[m
+[32m+[m[32m                expression { params.DEPLOY_ENV == 'test' }[m
+[32m+[m[32m            }[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                echo 'Docker deployment replaces the standalone Tomcat deployment for this pipeline.'[m
+             }[m
+         }[m
+     }[m
+[36m@@ -154,7 +218,7 @@[m [mpipeline {[m
+         }[m
+ [m
+         success {[m
+[31m-            echo 'Pipeline succeeded. Tests passed; deployment ran if DEPLOY_ENV was test.'[m
+[32m+[m[32m            echo "Pipeline succeeded for DEPLOY_ENV=${params.DEPLOY_ENV}."[m
+         }[m
+ [m
+         failure {[m

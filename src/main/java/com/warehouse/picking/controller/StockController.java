@@ -5,6 +5,7 @@ import com.warehouse.picking.model.StockTransaction;
 import com.warehouse.picking.model.StockTransaction.TransactionType;
 import com.warehouse.picking.repository.ItemRepository;
 import com.warehouse.picking.service.StockTransactionService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/stock")
+@PreAuthorize("hasRole('WAREHOUSE_ADMIN')")
 public class StockController {
 
     private final ItemRepository itemRepository;
@@ -56,13 +58,13 @@ public class StockController {
     }
 
     public static class TransactionForm {
-        private Long itemId;
+        private String itemId;
         private TransactionType type = TransactionType.IN;
         private int quantity = 1;
         private String notes;
 
-        public Long getItemId() { return itemId; }
-        public void setItemId(Long itemId) { this.itemId = itemId; }
+        public String getItemId() { return itemId; }
+        public void setItemId(String itemId) { this.itemId = itemId; }
         public TransactionType getType() { return type; }
         public void setType(TransactionType type) { this.type = type; }
         public int getQuantity() { return quantity; }

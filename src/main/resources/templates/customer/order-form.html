@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Place Order - Warehouse Portal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Place Order</p>
+        </div>
+        <div style="color: white; text-align: right;">
+            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
+        </div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/customer}">Home</a>
+        <a th:href="@{/customer/catalogue}">Browse Items</a>
+        <a th:href="@{/customer/order-form}">Place Order</a>
+        <a th:href="@{/customer/my-orders}">My Orders</a>
+    </nav>
+    <main class="content">
+        <div class="alert success" th:if="${message}" th:text="${message}"></div>
+        <div class="alert error" th:if="${error}" th:text="${error}"></div>
+        
+        <section class="form-card">
+            <div class="card-header">
+                <div>
+                    <h2>Create Order</h2>
+                    <p>Select items and quantities to place your order.</p>
+                </div>
+            </div>
+            <form class="item-form" method="post" th:action="@{/customer/orders}" th:object="${orderForm}">
+                <div class="form-group">
+                    <label for="itemId">Item</label>
+                    <select id="itemId" th:field="*{itemId}" required>
+                        <option value="">Select an item</option>
+                        <option th:each="item : ${items}" 
+                                th:value="${item.id}"
+                                th:disabled="${item.quantity == 0}"
+                                th:text="${item.sku + ' — ' + item.name + ' (Available: ' + item.quantity + ')'}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Order quantity</label>
+                    <input id="quantity" type="number" min="1" th:field="*{quantity}" required>
+                </div>
+                <div class="form-actions">
+                    <a th:href="@{/customer/catalogue}" class="btn btn-secondary">Cancel</a>
+                    <button class="btn btn-primary" type="submit">Place Order</button>
+                </div>
+            </form>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>

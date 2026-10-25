@@ -31,21 +31,22 @@ class StockTransactionServiceTest {
     private StockTransactionService stockTransactionService;
 
     private Item item;
+    private static final String TEST_ITEM_ID = "507f1f77bcf86cd799439011";
 
     @BeforeEach
     void setUp() {
         item = new Item("SKU-TEST", "Test Item", "A1", 10, 3);
-        item.setId(1L);
+        item.setId(TEST_ITEM_ID);
     }
 
     @Test
     void stockInShouldIncreaseQuantity() {
-        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.findById(TEST_ITEM_ID)).thenReturn(Optional.of(item));
         when(transactionRepository.save(any(StockTransaction.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         stockTransactionService.recordTransaction(
-                1L, StockTransaction.TransactionType.IN, 5, "Restock");
+                TEST_ITEM_ID, StockTransaction.TransactionType.IN, 5, "Restock");
 
         assertEquals(15, item.getQuantity());
         verify(itemRepository).save(item);
@@ -54,12 +55,12 @@ class StockTransactionServiceTest {
 
     @Test
     void stockOutShouldDecreaseQuantity() {
-        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.findById(TEST_ITEM_ID)).thenReturn(Optional.of(item));
         when(transactionRepository.save(any(StockTransaction.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         stockTransactionService.recordTransaction(
-                1L, StockTransaction.TransactionType.OUT, 4, "Picking");
+                TEST_ITEM_ID, StockTransaction.TransactionType.OUT, 4, "Picking");
 
         assertEquals(6, item.getQuantity());
         verify(itemRepository).save(item);
@@ -68,11 +69,11 @@ class StockTransactionServiceTest {
 
     @Test
     void stockOutShouldRejectInsufficientQuantity() {
-        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.findById(TEST_ITEM_ID)).thenReturn(Optional.of(item));
 
         assertThrows(IllegalArgumentException.class, () ->
                 stockTransactionService.recordTransaction(
-                        1L, StockTransaction.TransactionType.OUT, 11, "Picking"));
+                        TEST_ITEM_ID, StockTransaction.TransactionType.OUT, 11, "Picking"));
 
         assertEquals(10, item.getQuantity());
         verify(itemRepository, never()).save(any(Item.class));
@@ -83,7 +84,7 @@ class StockTransactionServiceTest {
     void transactionShouldRejectZeroQuantity() {
         assertThrows(IllegalArgumentException.class, () ->
                 stockTransactionService.recordTransaction(
-                        1L, StockTransaction.TransactionType.IN, 0, "Invalid"));
+                        TEST_ITEM_ID, StockTransaction.TransactionType.IN, 0, "Invalid"));
 
         verifyNoInteractions(itemRepository, transactionRepository);
     }

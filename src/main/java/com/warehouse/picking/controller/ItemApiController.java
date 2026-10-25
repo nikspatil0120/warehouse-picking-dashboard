@@ -56,7 +56,7 @@ public class ItemApiController {
     }
 
     @GetMapping("/items/{id}")
-    public ResponseEntity<Item> getItem(@PathVariable Long id) {
+    public ResponseEntity<Item> getItem(@PathVariable String id) {
         return repository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

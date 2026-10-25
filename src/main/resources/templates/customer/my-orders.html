@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Orders - Warehouse Portal</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>My Orders</p>
+        </div>
+        <div style="color: white; text-align: right;">
+            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
+        </div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/customer}">Home</a>
+        <a th:href="@{/customer/catalogue}">Browse Items</a>
+        <a th:href="@{/customer/order-form}">Place Order</a>
+        <a th:href="@{/customer/my-orders}">My Orders</a>
+    </nav>
+    <main class="content">
+        <div class="alert success" th:if="${message}" th:text="${message}"></div>
+        <div class="alert error" th:if="${error}" th:text="${error}"></div>
+        
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2>My Orders</h2>
+                    <p>View your order history and current status.</p>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Ordered</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="order : ${orders}">
+                        <td th:text="${'#' + order.id}">1</td>
+                        <td th:text="${order.item.sku + ' — ' + order.item.name}">Item</td>
+                        <td class="quantity" th:text="${order.quantity}">1</td>
+                        <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                        <td>
+                            <span class="status" 
+                                  th:classappend="${order.status == 'COMPLETED' ? 'status-good' : (order.status == 'CANCELLED' ? 'status-danger' : 'status-warning')}"
+                                  th:text="${order.status}">PENDING</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/customer/orders/{id}(id=${order.id})}" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
+                                View
+                            </a>
+                            <form method="post" 
+                                  th:action="@{/customer/orders/{id}/cancel(id=${order.id})}"
+                                  style="display: inline;"
+                                  th:if="${order.status == 'PENDING'}">
+                                <button class="btn btn-secondary" type="submit" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('Are you sure?')">
+                                    Cancel
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(orders)}">
+                        <td colspan="6">You have not placed any orders yet. <a th:href="@{/customer/order-form}">Place an order now.</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+[1mdiff --git a/Jenkinsfile b/Jenkinsfile[m
+[1mindex dcd5c75..04bd8b0 100644[m
+[1m--- a/Jenkinsfile[m
+[1m+++ b/Jenkinsfile[m
+[36m@@ -1,4 +1,3 @@[m
+[31m-[m
+ pipeline {[m
+     agent any[m
+ [m
+[36m@@ -13,34 +12,58 @@[m [mpipeline {[m
+     environment {[m
+         APP_NAME = 'picking-dashboard'[m
+         WAR_FILE = 'target/picking-dashboard-0.0.1-SNAPSHOT.war'[m
+[32m+[m[32m        SELENIUM_APP_PORT = '8081'[m
+     }[m
+ [m
+     stages {[m
+         stage('Checkout') {[m
+             steps {[m
+                 checkout scm[m
+[32m+[m[32m                bat 'git branch --show-current'[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        stage('Build Package') {[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                bat 'mvn clean package -DskipTests'[m
+[32m+[m[32m                bat 'if not exist "%WAR_FILE%" exit /b 1'[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        stage('Start Application for Selenium') {[m
+[32m+[m[32m            steps {[m
+[32m+[m[32m                bat '''[m
+[32m+[m[32m                    if not exist target mkdir target[m
+[32m+[m[32m                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081' -WorkingDirectory $env:WORKSPACE -RedirectStandardOutput (Join-Path $env:WORKSPACE 'target\\selenium-app.log') -RedirectStandardError (Join-Path $env:WORKSPACE 'target\\selenium-app-error.log') -PassThru; Set-Content -Path (Join-Path $env:WORKSPACE 'target\\selenium-app.pid') -Value $p.Id"[m
+[32m+[m[32m                '''[m
+[32m+[m
+[32m+[m[32m                bat '''[m
+[32m+[m[32m                    powershell -NoProfile -ExecutionPolicy Bypass -Command "$ready = $false; for ($i = 0; $i -lt 60; $i++) { try { $r = Invoke-WebRequest -Uri 'http://localhost:8081/items' -UseBasicParsing -TimeoutSec 2; if ($r.StatusCode -eq 200) { $ready = $true; break } } catch {}; Start-Sleep -Seconds 2 }; if (-not $ready) { Write-Error 'Application did not become ready on port 8081'; Get-Content (Join-Path $env:WORKSPACE 'target\\selenium-app.log') -ErrorAction SilentlyContinue; exit 1 }"[m
+[32m+[m[32m                '''[m
+[32m+[m[32m            }[m
+[32m+[m
+[32m+[m[32m            post {[m
+[32m+[m[32m                always {[m
+[32m+[m[32m                    bat '''[m
+[32m+[m[32m                        powershell -NoProfile -ExecutionPolicy Bypass -Command "$f = Join-Path $env:WORKSPACE 'target\\selenium-app.pid'; if (Test-Path $f) { $id = Get-Content $f; if ($id) { taskkill /PID $id /T /F 2>$null | Out-Null }; Remove-Item $f -Force -ErrorAction SilentlyContinue }"[m
+[32m+[m[32m                    '''[m
+[32m+[m[32m                }[m
+             }[m
+         }[m
+ [m
+[31m-        stage('Build and Test') {[m
+[32m+[m[32m        stage('Continuous Testing') {[m
+             steps {[m
+[31m-                bat 'mvn clean package'[m
+[32m+[m[32m                bat 'mvn test'[m
+             }[m
+         }[m
+ [m
+         stage('Package Verification') {[m
+             steps {[m
+                 bat 'if not exist "%WAR_FILE%" exit /b 1'[m
+[31m-[m
+                 archiveArtifacts([m
+                     artifacts: 'target/*.war',[m
+                     fingerprint: true[m
+                 )[m
+[31m-[m
+[31m-                junit([m
+[31m-                    testResults: 'target/surefire-reports/*.xml',[m
+[31m-                    allowEmptyResults: false[m
+[31m-                )[m
+             }[m
+         }[m
+ [m
+[36m@@ -54,14 +77,9 @@[m [mpipeline {[m
+             steps {[m
+                 script {[m
+                     def deployDir = env.TOMCAT_WEBAPPS_DIR ?: 'C:\\Tomcat\\webapps'[m
+[31m-                    def warPath = "${env.WORKSPACE}\\${env.WAR_FILE}"[m
+[31m-[m
+[31m-                    echo "Workspace: ${env.WORKSPACE}"[m
+[31m-                    echo "WAR source: ${warPath}"[m
+[31m-                    echo "Deployment directory: ${deployDir}"[m
+ [m
+                     if (!fileExists(env.WAR_FILE)) {[m
+[31m-                        error("WAR file not found in workspace: ${env.WAR_FILE}")[m
+[32m+[m[32m                        error("WAR file not found: ${env.WAR_FILE}")[m
+                     }[m
+ [m
+                     if (!fileExists(deployDir)) {[m
+[36m@@ -69,61 +87,36 @@[m [mpipeline {[m
+                     }[m
+ [m
+                     bat """[m
+[31m-                        echo === WORKSPACE ===[m
+[31m-                        echo %WORKSPACE%[m
+[31m-[m
+[31m-                        echo === WAR FILE CHECK ===[m
+[31m-                        dir "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war"[m
+[31m-[m
+[31m-                        if not exist "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" ([m
+[31m-                            echo ERROR: WAR file does not exist at the expected path.[m
+[31m-                            exit /b 2[m
+[31m-                        )[m
+[31m-[m
+[31m-                        echo === TOMCAT DIRECTORY CHECK ===[m
+[31m-                        dir "${deployDir}"[m
+[31m-[m
+[31m-                        if not exist "${deployDir}\\." ([m
+[31m-                            echo ERROR: Tomcat deployment directory is unavailable.[m
+[31m-                            exit /b 3[m
+[31m-                        )[m
+[31m-[m
+[31m-                        echo === COPYING WAR ===[m
+[31m-                        copy /Y "%WORKSPACE%\\target\\picking-dashboard-0.0.1-SNAPSHOT.war" "${deployDir}\\picking-dashboard.war"[m
+[31m-[m
+[31m-                        if errorlevel 1 ([m
+[31m-                            echo ERROR: WAR copy failed.[m
+[31m-                            exit /b 4[m
+[31m-                        )[m
+[31m-[m
+[31m-                        echo === VERIFYING DEPLOYED WAR ===[m
+[31m-                        dir "${deployDir}\\picking-dashboard.war"[m
+[31m-[m
+[31m-                        if not exist "${deployDir}\\picking-dashboard.war" ([m
+[31m-                            echo ERROR: Deployed WAR was not found.[m
+[31m-                            exit /b 5[m
+[31m-                        )[m
+[32m+[m[32m                        copy /Y "%WORKSPACE%\\${env.WAR_FILE}" "${deployDir}\\picking-dashboard.war"[m
+[32m+[m[32m                        if errorlevel 1 exit /b 1[m
+                     """[m
+[32m+[m
+[32m+[m[32m                    echo "WAR deployed to ${deployDir}\\picking-dashboard.war"[m
+                 }[m
+             }[m
+         }[m
+     }[m
+ [m
+     post {[m
+[31m-        success {[m
+[31m-            echo "Pipeline completed successfully for DEPLOY_ENV=${params.DEPLOY_ENV}."[m
+[31m-        }[m
+[31m-[m
+[31m-        failure {[m
+[31m-            echo 'Pipeline failed. Review the stage logs.'[m
+[31m-        }[m
+[31m-[m
+         always {[m
+[32m+[m[32m            junit([m
+[32m+[m[32m                testResults: 'target/surefire-reports/*.xml',[m
+[32m+[m[32m                allowEmptyResults: false[m
+[32m+[m[32m            )[m
+[32m+[m
+             archiveArtifacts([m
+[31m-                artifacts: 'target/*.war',[m
+[32m+[m[32m                artifacts: 'target/*.war,target/selenium-app*.log,target/selenium-screenshots/*.png',[m
+                 allowEmptyArchive: true,[m
+                 fingerprint: true[m
+             )[m
+         }[m
+[32m+[m
+[32m+[m[32m        success {[m
+[32m+[m[32m            echo 'Pipeline succeeded. Tests passed; deployment was allowed if DEPLOY_ENV was test.'[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        failure {[m
+[32m+[m[32m            echo 'Pipeline failed. Later stages, including deployment, will not run after a failed test stage.'[m
+[32m+[m[32m        }[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m

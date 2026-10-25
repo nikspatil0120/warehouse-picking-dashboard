@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customer Portal - Warehouse Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell">
+    <header class="topbar">
+        <div>
+            <h1>Warehouse Picking Dashboard</h1>
+            <p>Customer Portal</p>
+        </div>
+        <div style="color: white; text-align: right;">
+            <p th:text="'Welcome, ' + ${username}"></p>
+            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
+        </div>
+    </header>
+    <nav class="nav-links">
+        <a th:href="@{/customer}">Home</a>
+        <a th:href="@{/customer/catalogue}">Browse Items</a>
+        <a th:href="@{/customer/order-form}">Place Order</a>
+        <a th:href="@{/customer/my-orders}">My Orders</a>
+    </nav>
+    <main class="content">
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2>Welcome to the Warehouse Portal</h2>
+                    <p>Browse our product catalogue and manage your orders.</p>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <a class="dashboard-tile" th:href="@{/customer/catalogue}">
+                    <h3>Browse Items</h3>
+                    <p>View all available products and check stock levels.</p>
+                </a>
+                <a class="dashboard-tile" th:href="@{/customer/order-form}">
+                    <h3>Place Order</h3>
+                    <p>Create a new order for the items you need.</p>
+                </a>
+                <a class="dashboard-tile" th:href="@{/customer/my-orders}">
+                    <h3>View Orders</h3>
+                    <p>Check your order history and current order status.</p>
+                </a>
+            </div>
+        </section>
+    </main>
+    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+</div>
+</body>
+</html>

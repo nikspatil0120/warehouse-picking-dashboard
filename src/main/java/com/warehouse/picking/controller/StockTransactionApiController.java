@@ -55,7 +55,7 @@ public class StockTransactionApiController {
 
     public record TransactionRequest(
             @NotNull(message = "Item ID is required")
-            Long itemId,
+            String itemId,
 
             @NotNull(message = "Transaction type is required")
             TransactionType type,

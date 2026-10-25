@@ -5,6 +5,7 @@ import com.warehouse.picking.model.CustomerOrder;
 import com.warehouse.picking.model.CustomerOrder.OrderStatus;
 import com.warehouse.picking.repository.ItemRepository;
 import com.warehouse.picking.service.OrderService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/orders")
+@PreAuthorize("hasRole('WAREHOUSE_ADMIN')")
 public class OrderController {
 
     private final OrderService orderService;
@@ -51,7 +53,7 @@ public class OrderController {
 
     @PostMapping("/{id}/status")
     public String updateStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam OrderStatus status,
             RedirectAttributes redirectAttributes) {
         try {
@@ -66,11 +68,11 @@ public class OrderController {
     }
 
     public static class OrderForm {
-        private Long itemId;
+        private String itemId;
         private int quantity = 1;
 
-        public Long getItemId() { return itemId; }
-        public void setItemId(Long itemId) { this.itemId = itemId; }
+        public String getItemId() { return itemId; }
+        public void setItemId(String itemId) { this.itemId = itemId; }
         public int getQuantity() { return quantity; }
         public void setQuantity(int quantity) { this.quantity = quantity; }
     }
