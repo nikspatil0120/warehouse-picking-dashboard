@@ -1,6 +1,7 @@
 package com.warehouse.picking.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.Min;
@@ -12,6 +13,9 @@ public class Item {
 
     @Id
     private String id;
+
+    @Version
+    private Long version;
 
     @NotBlank(message = "SKU is required")
     @Size(max = 100, message = "SKU must be at most 100 characters")
@@ -86,5 +90,13 @@ public class Item {
 
     public void setReorderThreshold(int reorderThreshold) {
         this.reorderThreshold = reorderThreshold;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }

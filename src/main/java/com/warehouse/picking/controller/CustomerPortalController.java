@@ -169,7 +169,7 @@ public class CustomerPortalController {
             }
 
             // Cancel order (service validates status)
-            orderService.cancelOrder(id);
+            orderService.cancelOrder(id, customer);
             
             redirectAttributes.addFlashAttribute("message", "Order cancelled successfully");
             return "redirect:/customer/my-orders";

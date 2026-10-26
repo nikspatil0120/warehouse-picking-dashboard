@@ -85,7 +85,7 @@ public class OrderServiceTests {
         CustomerOrder order = orderService.createOrderForCustomer(customer, item.getId(), 10);
         int stockAfterOrder = itemRepository.findById(item.getId()).orElseThrow().getQuantity();
 
-        orderService.cancelOrder(order.getId());
+        orderService.cancelOrder(order.getId(), customer);
 
         Item finalItem = itemRepository.findById(item.getId()).orElseThrow();
         assertEquals(initialQuantity, finalItem.getQuantity());
@@ -98,10 +98,10 @@ public class OrderServiceTests {
     @Test
     public void testCancelOrderFailsIfNotPending() {
         CustomerOrder order = orderService.createOrderForCustomer(customer, item.getId(), 10);
-        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.PICKING);
+        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.PICKING, customer);
 
         assertThrows(IllegalArgumentException.class,
-                () -> orderService.cancelOrder(order.getId()));
+                () -> orderService.cancelOrder(order.getId(), customer));
     }
 
     @Test
@@ -117,11 +117,11 @@ public class OrderServiceTests {
     public void testUpdateOrderStatusValidTransition() {
         CustomerOrder order = orderService.createOrderForCustomer(customer, item.getId(), 10);
 
-        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.PICKING);
+        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.PICKING, customer);
         CustomerOrder updated = orderRepository.findById(order.getId()).orElseThrow();
         assertEquals(CustomerOrder.OrderStatus.PICKING, updated.getStatus());
 
-        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.COMPLETED);
+        orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.COMPLETED, customer);
         updated = orderRepository.findById(order.getId()).orElseThrow();
         assertEquals(CustomerOrder.OrderStatus.COMPLETED, updated.getStatus());
     }
@@ -131,7 +131,7 @@ public class OrderServiceTests {
         CustomerOrder order = orderService.createOrderForCustomer(customer, item.getId(), 10);
 
         assertThrows(IllegalArgumentException.class,
-                () -> orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.COMPLETED));
+                () -> orderService.updateOrderStatus(order.getId(), CustomerOrder.OrderStatus.COMPLETED, customer));
     }
 
     @Test
