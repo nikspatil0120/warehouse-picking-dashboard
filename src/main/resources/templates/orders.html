@@ -20,39 +20,17 @@
     <main class="content">
         <div class="alert success" th:if="${message}" th:text="${message}"></div>
         <div class="alert error" th:if="${error}" th:text="${error}"></div>
-        <section class="form-card">
-            <div class="card-header"><div><h2>Create Order</h2>
-                <p>New orders begin with PENDING status.</p></div></div>
-            <form class="item-form" method="post" th:action="@{/orders}"
-                  th:object="${orderForm}">
-                <div class="form-group">
-                    <label for="itemId">Item</label>
-                    <select id="itemId" th:field="*{itemId}" required>
-                        <option value="">Select an item</option>
-                        <option th:each="item : ${items}" th:value="${item.id}"
-                                th:text="${item.sku + ' — ' + item.name}"></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="quantity">Order quantity</label>
-                    <input id="quantity" type="number" min="1"
-                           th:field="*{quantity}" required>
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-primary" type="submit">Create Order</button>
-                </div>
-            </form>
-        </section>
-        <section class="card section-gap">
+        <section class="card">
             <div class="card-header"><div><h2>Orders</h2>
                 <p>Update the workflow status for each order.</p></div></div>
             <div class="table-wrapper">
                 <table>
-                    <thead><tr><th>ID</th><th>Item</th><th>Quantity</th>
+                    <thead><tr><th>ID</th><th>Customer</th><th>Item</th><th>Quantity</th>
                         <th>Created</th><th>Status</th><th>Update Status</th></tr></thead>
                     <tbody>
                     <tr th:each="order : ${orders}">
                         <td th:text="${order.id}">1</td>
+                        <td th:text="${order.customer != null ? order.customer.username : 'Admin Order'}">N/A</td>
                         <td th:text="${order.item.sku + ' — ' + order.item.name}">Item</td>
                         <td th:text="${order.quantity}">1</td>
                         <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
@@ -70,7 +48,7 @@
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(orders)}">
-                        <td colspan="6">No orders have been created yet.</td>
+                        <td colspan="7">No orders have been created yet.</td>
                     </tr>
                     </tbody>
                 </table>
