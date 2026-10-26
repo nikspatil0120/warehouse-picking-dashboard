@@ -98,8 +98,8 @@
                         <div class="detail-label">Current Status</div>
                         <div class="detail-value">
                             <span class="status" 
-                                  th:classappend="${order.status == 'COMPLETED' ? 'status-good' : (order.status == 'CANCELLED' ? 'status-danger' : 'status-warning')}"
-                                  th:text="${order.status}">PENDING</span>
+                                  th:classappend="${order.status.name() == 'COMPLETED' ? 'status-good' : (order.status.name() == 'CANCELLED' ? 'status-danger' : 'status-warning')}"
+                                  th:text="${order.status.name()}">PENDING</span>
                         </div>
                     </div>
 
@@ -114,7 +114,7 @@
                     <form method="post" 
                           th:action="@{/customer/orders/{id}/cancel(id=${order.id})}"
                           style="display: inline;"
-                          th:if="${order.status == 'PENDING'}">
+                          th:if="${order.status.name() == 'PENDING'}">
                         <button class="btn btn-primary" type="submit" onclick="return confirm('Are you sure you want to cancel this order?')">
                             Cancel Order
                         </button>
