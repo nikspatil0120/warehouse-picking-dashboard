@@ -2,6 +2,8 @@ package com.warehouse.picking;
 
 import com.warehouse.picking.model.Item;
 import com.warehouse.picking.repository.ItemRepository;
+import com.warehouse.picking.repository.CustomerOrderRepository;
+import com.warehouse.picking.repository.StockTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +25,20 @@ public class AuthorizationTests {
     @Autowired
     private ItemRepository itemRepository;
 
+    @Autowired
+    private CustomerOrderRepository orderRepository;
+
+    @Autowired
+    private StockTransactionRepository transactionRepository;
+
     @BeforeEach
     public void setup() {
+        // Clear all data to ensure clean test state
+        transactionRepository.deleteAll();
+        orderRepository.deleteAll();
         itemRepository.deleteAll();
+        
+        // Create a test item
         itemRepository.save(new Item("SKU-001", "Test Item", "A-01", 10, 5));
     }
 

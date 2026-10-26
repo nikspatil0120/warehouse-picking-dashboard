@@ -70,6 +70,15 @@ public class StockTransactionService {
 
     @Transactional(readOnly = true)
     public List<StockTransaction> getAllTransactions() {
-        return transactionRepository.findAllByOrderByCreatedAtDesc();
+        List<StockTransaction> transactions = transactionRepository.findAllByOrderByCreatedAtDesc();
+        // Access item properties to ensure lazy loading happens within transaction
+        transactions.forEach(tx -> {
+            if (tx.getItem() != null) {
+                // Access properties to force load within the transaction
+                tx.getItem().getSku();
+                tx.getItem().getName();
+            }
+        });
+        return transactions;
     }
 }

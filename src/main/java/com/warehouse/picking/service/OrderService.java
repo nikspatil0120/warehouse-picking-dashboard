@@ -147,7 +147,16 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<CustomerOrder> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc();
+        List<CustomerOrder> orders = orderRepository.findAllByOrderByCreatedAtDesc();
+        // Access item properties to ensure lazy loading happens within transaction
+        orders.forEach(order -> {
+            if (order.getItem() != null) {
+                // Access properties to force load within the transaction
+                order.getItem().getSku();
+                order.getItem().getName();
+            }
+        });
+        return orders;
     }
 
     @Transactional(readOnly = true)
@@ -155,7 +164,16 @@ public class OrderService {
         if (customer == null) {
             throw new IllegalArgumentException("Customer is required");
         }
-        return orderRepository.findAllByCustomerOrderByCreatedAtDesc(customer);
+        List<CustomerOrder> orders = orderRepository.findAllByCustomerOrderByCreatedAtDesc(customer);
+        // Access item properties to ensure lazy loading happens within transaction
+        orders.forEach(order -> {
+            if (order.getItem() != null) {
+                // Access properties to force load within the transaction
+                order.getItem().getSku();
+                order.getItem().getName();
+            }
+        });
+        return orders;
     }
 
     @Transactional(readOnly = true)
@@ -171,7 +189,15 @@ public class OrderService {
         if (orderId == null) {
             throw new IllegalArgumentException("Order ID is required");
         }
-        return orderRepository.findById(orderId);
+        Optional<CustomerOrder> order = orderRepository.findById(orderId);
+        // Access item properties to ensure lazy loading happens within transaction
+        order.ifPresent(o -> {
+            if (o.getItem() != null) {
+                o.getItem().getSku();
+                o.getItem().getName();
+            }
+        });
+        return order;
     }
 
     @Transactional

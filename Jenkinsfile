@@ -28,7 +28,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/nikspatil0120/warehouse-picking-dashboard.git']]
+                ])
                 bat 'git branch --show-current'
             }
         }
