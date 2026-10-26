@@ -36,14 +36,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="type">Movement</label>
-                        <select id="type" th:field="*{type}" required>
-                            <option th:each="type : ${transactionTypes}"
-                                    th:value="${type}" th:text="${type}">IN</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity">Quantity</label>
+                        <label for="quantity">Quantity to Receive (IN)</label>
                         <input id="quantity" type="number" min="1"
                                th:field="*{quantity}" required>
                     </div>
@@ -51,10 +44,13 @@
                 <div class="form-group">
                     <label for="notes">Notes (optional)</label>
                     <input id="notes" type="text" th:field="*{notes}"
-                           placeholder="Restock delivery, picking, adjustment...">
+                           placeholder="Restock delivery, batch number, supplier...">
                 </div>
+                <p style="font-size: 12px; color: #6b7280; margin: 12px 0 0 0;">
+                    <strong>Note:</strong> Stock OUT is automatically managed through customer orders. Only record stock receipts here.
+                </p>
                 <div class="form-actions">
-                    <button class="btn btn-primary" type="submit">Record Transaction</button>
+                    <button class="btn btn-primary" type="submit">Record Stock Receipt</button>
                 </div>
             </form>
         </section>

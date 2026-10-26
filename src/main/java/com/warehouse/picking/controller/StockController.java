@@ -31,7 +31,8 @@ public class StockController {
         model.addAttribute("items", itemRepository.findAll());
         model.addAttribute("transactions",
                 transactionService.getAllTransactions());
-        model.addAttribute("transactionTypes", TransactionType.values());
+        // Only show IN as the transaction type (stock-out is automatic via orders)
+        model.addAttribute("transactionTypes", new TransactionType[]{TransactionType.IN});
         model.addAttribute("transactionForm", new TransactionForm());
         return "stock";
     }
@@ -41,6 +42,9 @@ public class StockController {
             @ModelAttribute TransactionForm transactionForm,
             RedirectAttributes redirectAttributes) {
         try {
+            // Force type to IN (stock-out is handled automatically by orders)
+            transactionForm.setType(TransactionType.IN);
+            
             StockTransaction transaction =
                     transactionService.recordTransaction(
                             transactionForm.getItemId(),
@@ -49,7 +53,7 @@ public class StockController {
                             transactionForm.getNotes());
 
             redirectAttributes.addFlashAttribute(
-                    "message", "Stock transaction recorded successfully.");
+                    "message", "Stock receipt recorded successfully.");
         } catch (IllegalArgumentException | ArithmeticException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
