@@ -1,134 +1,109 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Item | Warehouse Picking Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Item — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-
 <div class="app-shell">
 
-    <header class="topbar">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Operations Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main Menu</div>
+      <a th:href="@{/}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a th:href="@{/items}" class="active"><span class="nav-icon">📋</span> Item Catalogue</a>
+      <a th:href="@{/stock}"><span class="nav-icon">📦</span> Stock Transactions</a>
+      <a th:href="@{/orders}"><span class="nav-icon">🛒</span> Orders</a>
+      <a th:href="@{/alerts}"><span class="nav-icon">🔔</span> Stock Alerts</a>
+    </nav>
+        <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <div class="page-header">
+      <div class="page-header-inner">
         <div>
-            <h1>Warehouse Picking Dashboard</h1>
-            <p>Add Item</p>
+          <h1>➕ Add New Item</h1>
+          <p>Enter the details of the warehouse item to add it to the catalogue.</p>
+        </div>
+        <a class="btn btn-secondary" th:href="@{/items}">← Back to Catalogue</a>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="form-card">
+        <div class="card-header">
+          <div>
+            <h2>Item Details</h2>
+            <p>Fill in the fields below. SKU must be unique.</p>
+          </div>
         </div>
 
-        <a class="btn btn-secondary" th:href="@{/items}">
-            ← Back to Catalogue
-        </a>
-    </header>
+        <form th:action="@{/items}" th:object="${item}" method="post" class="item-form">
 
-    <main class="content">
-
-        <section class="form-card">
-
-            <div class="card-header">
-                <div>
-                    <h2>Add New Item</h2>
-                    <p>Enter the details of the warehouse item.</p>
-                </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sku">SKU</label>
+              <input id="sku" type="text" th:field="*{sku}" placeholder="e.g. SKU-1001">
+              <div class="field-error" th:if="${#fields.hasErrors('sku')}" th:errors="*{sku}">SKU is required</div>
             </div>
+            <div class="form-group">
+              <label for="name">Item Name</label>
+              <input id="name" type="text" th:field="*{name}" placeholder="e.g. Wireless Mouse">
+              <div class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Name is required</div>
+            </div>
+          </div>
 
-            <form th:action="@{/items}"
-                  th:object="${item}"
-                  method="post"
-                  class="item-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="location">Warehouse Location</label>
+              <input id="location" type="text" th:field="*{location}" placeholder="e.g. A-01">
+            </div>
+            <div class="form-group">
+              <label for="quantity">Initial Quantity</label>
+              <input id="quantity" type="number" min="0" th:field="*{quantity}" placeholder="0">
+              <div class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}">Must be ≥ 0</div>
+            </div>
+          </div>
 
-                <div class="form-group">
-                    <label for="sku">SKU</label>
+          <div class="form-group">
+            <label for="reorderThreshold">Reorder Threshold</label>
+            <input id="reorderThreshold" type="number" min="0" th:field="*{reorderThreshold}" placeholder="e.g. 10">
+            <div class="field-error" th:if="${#fields.hasErrors('reorderThreshold')}" th:errors="*{reorderThreshold}">Must be ≥ 0</div>
+          </div>
 
-                    <input id="sku"
-                           type="text"
-                           th:field="*{sku}"
-                           placeholder="e.g. SKU-1001">
+          <div class="form-actions">
+            <a class="btn btn-secondary" th:href="@{/items}">Cancel</a>
+            <button id="save-item" type="submit" class="btn btn-primary">💾 Save Item</button>
+          </div>
 
-                    <div class="field-error"
-                         th:if="${#fields.hasErrors('sku')}"
-                         th:errors="*{sku}">
-                        SKU is required
-                    </div>
-                </div>
+        </form>
+      </div>
+    </div>
 
-                <div class="form-group">
-                    <label for="name">Item Name</label>
-
-                    <input id="name"
-                           type="text"
-                           th:field="*{name}"
-                           placeholder="e.g. Wireless Mouse">
-
-                    <div class="field-error"
-                         th:if="${#fields.hasErrors('name')}"
-                         th:errors="*{name}">
-                        Name is required
-                    </div>
-                </div>
-
-                <div class="form-row">
-
-                    <div class="form-group">
-                        <label for="location">Location</label>
-
-                        <input id="location"
-                               type="text"
-                               th:field="*{location}"
-                               placeholder="e.g. A-01">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="quantity">Quantity</label>
-
-                        <input id="quantity"
-                               type="number"
-                               min="0"
-                               th:field="*{quantity}"
-                               placeholder="0">
-
-                        <div class="field-error"
-                             th:if="${#fields.hasErrors('quantity')}"
-                             th:errors="*{quantity}">
-                            Quantity cannot be negative
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="form-group">
-                    <label for="reorderThreshold">Reorder Threshold</label>
-
-                    <input id="reorderThreshold"
-                           type="number"
-                           min="0"
-                           th:field="*{reorderThreshold}"
-                           placeholder="e.g. 10">
-                </div>
-
-                <div class="form-actions">
-                    <a class="btn btn-secondary" th:href="@{/items}">
-                        Cancel
-                    </a>
-
-                    <button id="save-item"
-                            type="submit"
-                            class="btn btn-primary">
-                        Save Item
-                    </button>
-                </div>
-
-            </form>
-
-        </section>
-
-    </main>
-
-    <footer>
-        <p>Warehouse Picking Dashboard &copy; 2026</p>
-    </footer>
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
 
 </div>
-
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

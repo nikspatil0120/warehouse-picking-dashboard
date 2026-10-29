@@ -1,52 +1,128 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stock Alerts</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Alerts — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div><h1>Warehouse Picking Dashboard</h1><p>Stock Alerts</p></div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/}">Dashboard</a><a th:href="@{/items}">Items</a>
-        <a th:href="@{/stock}">Stock</a><a th:href="@{/orders}">Orders</a>
-        <a th:href="@{/alerts}">Alerts</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Operations Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main Menu</div>
+      <a th:href="@{/}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a th:href="@{/items}"><span class="nav-icon">📋</span> Item Catalogue</a>
+      <a th:href="@{/stock}"><span class="nav-icon">📦</span> Stock Transactions</a>
+      <a th:href="@{/orders}"><span class="nav-icon">🛒</span> Orders</a>
+      <a th:href="@{/alerts}" class="active"><span class="nav-icon">🔔</span> Stock Alerts</a>
     </nav>
-    <main class="content">
-        <section class="card">
-            <div class="card-header"><div><h2>Inventory Alerts</h2>
-                <p>Items with zero stock or quantities at/below reorder threshold.</p></div>
-                <span class="item-count" th:text="${#lists.size(alerts)} + ' alerts'">0 alerts</span>
-            </div>
-            <div class="empty-state" th:if="${#lists.isEmpty(alerts)}">
-                <h3>All clear</h3><p>No low-stock or out-of-stock items detected.</p>
-            </div>
-            <div class="table-wrapper" th:unless="${#lists.isEmpty(alerts)}">
-                <table>
-                    <thead><tr><th>SKU</th><th>Item</th><th>Location</th>
-                        <th>Available</th><th>Reorder At</th><th>Alert</th></tr></thead>
-                    <tbody>
-                    <tr th:each="item : ${alerts}">
-                        <td th:text="${item.sku}">SKU</td>
-                        <td th:text="${item.name}">Item</td>
-                        <td th:text="${item.location}">A-01</td>
-                        <td th:text="${item.quantity}">0</td>
-                        <td th:text="${item.reorderThreshold}">5</td>
-                        <td><span class="status"
-                                  th:classappend="${item.quantity == 0} ? ' status-danger' : ' status-warning'"
-                                  th:text="${item.quantity == 0} ? 'OUT OF STOCK' : 'LOW STOCK'">LOW STOCK</span></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+        <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1>🔔 Stock Alerts</h1>
+          <p>Items with zero stock or quantities at or below their reorder threshold.</p>
+        </div>
+        <span class="badge badge-red" th:if="${not #lists.isEmpty(alerts)}"
+              th:text="${#lists.size(alerts)} + ' alert' + (${#lists.size(alerts) > 1} ? 's' : '') + ' require attention'">
+          0 alerts
+        </span>
+        <span class="badge badge-green" th:if="${#lists.isEmpty(alerts)}">✅ All clear</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- All clear state -->
+      <div class="card" th:if="${#lists.isEmpty(alerts)}">
+        <div class="empty-state">
+          <span class="empty-icon">✅</span>
+          <h3>Inventory looks healthy!</h3>
+          <p>No low-stock or out-of-stock items detected at this time.</p>
+          <a class="btn btn-secondary" th:href="@{/items}">View All Items</a>
+        </div>
+      </div>
+
+      <!-- Alerts table -->
+      <div class="card" th:unless="${#lists.isEmpty(alerts)}">
+        <div class="card-header">
+          <div>
+            <h2>Items Needing Attention</h2>
+            <p>Restock these items to maintain warehouse operations.</p>
+          </div>
+          <span class="item-count" th:text="${#lists.size(alerts)} + ' alerts'">0 alerts</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Item Name</th>
+                <th>Location</th>
+                <th>Available Qty</th>
+                <th>Reorder At</th>
+                <th>Alert Level</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="item : ${alerts}">
+                <td><span class="sku" th:text="${item.sku}">SKU</span></td>
+                <td style="font-weight:600;" th:text="${item.name}">Item Name</td>
+                <td>
+                  <span style="background:#f1f5f9; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600; color:#475569;"
+                        th:text="${item.location}">A-01</span>
+                </td>
+                <td>
+                  <span style="font-weight:800; font-size:16px;"
+                        th:classappend="${item.quantity == 0} ? ' ' : ''"
+                        th:style="${item.quantity == 0} ? 'color:#ef4444;' : 'color:#f59e0b;'"
+                        th:text="${item.quantity}">0</span>
+                </td>
+                <td style="color:#94a3b8;" th:text="${item.reorderThreshold}">5</td>
+                <td>
+                  <span class="status"
+                        th:classappend="${item.quantity == 0} ? ' status-danger' : ' status-warning'"
+                        th:text="${item.quantity == 0} ? '🔴 OUT OF STOCK' : '🟡 LOW STOCK'">LOW STOCK</span>
+                </td>
+                <td>
+                  <a class="btn btn-primary btn-sm" th:href="@{/stock}">Restock →</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

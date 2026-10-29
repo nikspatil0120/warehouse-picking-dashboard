@@ -1,85 +1,128 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Orders - Warehouse Portal</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Orders — Warehouse Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div>
-            <h1>Warehouse Picking Dashboard</h1>
-            <p>My Orders</p>
-        </div>
-        <div style="color: white; text-align: right;">
-            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
-        </div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/customer}">Home</a>
-        <a th:href="@{/customer/catalogue}">Browse Items</a>
-        <a th:href="@{/customer/order-form}">Place Order</a>
-        <a th:href="@{/customer/my-orders}">My Orders</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Customer Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Customer Menu</div>
+      <a th:href="@{/customer}"><span class="nav-icon">🏠</span> Home</a>
+      <a th:href="@{/customer/catalogue}"><span class="nav-icon">🛍️</span> Browse Items</a>
+      <a th:href="@{/customer/order-form}"><span class="nav-icon">✏️</span> Place Order</a>
+      <a th:href="@{/customer/my-orders}" class="active"><span class="nav-icon">📦</span> My Orders</a>
     </nav>
-    <main class="content">
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <div class="alert error" th:if="${error}" th:text="${error}"></div>
-        
-        <section class="card">
-            <div class="card-header">
-                <div>
-                    <h2>My Orders</h2>
-                    <p>View your order history and current status.</p>
-                </div>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Item</th>
-                        <th>Quantity</th>
-                        <th>Ordered</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="order : ${orders}">
-                        <td th:text="${'#' + order.id}">1</td>
-                        <td th:text="${order.item.sku + ' — ' + order.item.name}">Item</td>
-                        <td class="quantity" th:text="${order.quantity}">1</td>
-                        <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
-                        <td>
-                            <span class="status" 
-                                  th:classappend="${order.status == 'COMPLETED' ? 'status-good' : (order.status == 'CANCELLED' ? 'status-danger' : 'status-warning')}"
-                                  th:text="${order.status}">PENDING</span>
-                        </td>
-                        <td>
-                            <a th:href="@{/customer/orders/{id}(id=${order.id})}" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
-                                View
-                            </a>
-                            <form method="post" 
-                                  th:action="@{/customer/orders/{id}/cancel(id=${order.id})}"
-                                  style="display: inline;"
-                                  th:if="${order.status == 'PENDING'}">
-                                <button class="btn btn-secondary" type="submit" style="padding: 6px 12px; font-size: 12px;" onclick="return confirm('Are you sure?')">
-                                    Cancel
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(orders)}">
-                        <td colspan="6">You have not placed any orders yet. <a th:href="@{/customer/order-form}">Place an order now.</a></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1>📦 My Orders</h1>
+          <p>Your order history and current fulfilment status.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/customer/order-form}">+ Place New Order</a>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <div class="alert success" th:if="${message}">✅ <span th:text="${message}"></span></div>
+      <div class="alert error"   th:if="${error}">❌ <span th:text="${error}"></span></div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Order History</h2>
+            <p>Most recent orders shown first.</p>
+          </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
+          <span class="empty-icon">🛒</span>
+          <h3>No orders yet</h3>
+          <p>You haven't placed any orders. Browse the catalogue to get started.</p>
+          <a class="btn btn-primary" th:href="@{/customer/catalogue}">Browse Items</a>
+        </div>
+
+        <div class="table-wrapper" th:unless="${#lists.isEmpty(orders)}">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Ordered</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="order : ${orders}">
+                <td>
+                  <span style="font-family:monospace; font-size:11.5px; background:#f1f5f9; padding:3px 7px; border-radius:5px; color:#475569;"
+                        th:text="'#' + ${#strings.abbreviate(order.id, 12)}">ID</span>
+                </td>
+                <td>
+                  <div style="font-weight:600;" th:text="${order.item.name}">Item</div>
+                  <div style="margin-top:2px;"><span class="sku" th:text="${order.item.sku}">SKU</span></div>
+                </td>
+                <td style="font-weight:700;" th:text="${order.quantity}">1</td>
+                <td style="color:#64748b; font-size:12.5px;"
+                    th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+                <td>
+                  <span class="status"
+                        th:classappend="${order.status.toString() == 'DELIVERED' or order.status.toString() == 'COMPLETED'} ? ' status-good' :
+                                        (${order.status.toString() == 'CANCELLED'} ? ' status-danger' :
+                                        (${order.status.toString() == 'SHIPPED'} ? ' status-blue' : ' status-warning'))"
+                        th:text="${order.status}">PENDING</span>
+                </td>
+                <td style="display:flex; gap:7px; align-items:center;">
+                  <a th:href="@{/customer/orders/{id}(id=${order.id})}"
+                     class="btn btn-secondary btn-sm">View</a>
+                  <form method="post"
+                        th:action="@{/customer/orders/{id}/cancel(id=${order.id})}"
+                        th:if="${order.status.toString() == 'PENDING'}"
+                        style="display:inline;">
+                    <button class="btn btn-sm" style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;"
+                            type="submit"
+                            onclick="return confirm('Cancel this order?')">Cancel</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

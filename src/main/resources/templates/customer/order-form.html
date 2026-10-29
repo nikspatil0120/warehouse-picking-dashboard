@@ -1,62 +1,96 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Place Order - Warehouse Portal</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Place Order — Warehouse Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div>
-            <h1>Warehouse Picking Dashboard</h1>
-            <p>Place Order</p>
-        </div>
-        <div style="color: white; text-align: right;">
-            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
-        </div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/customer}">Home</a>
-        <a th:href="@{/customer/catalogue}">Browse Items</a>
-        <a th:href="@{/customer/order-form}">Place Order</a>
-        <a th:href="@{/customer/my-orders}">My Orders</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Customer Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Customer Menu</div>
+      <a th:href="@{/customer}"><span class="nav-icon">🏠</span> Home</a>
+      <a th:href="@{/customer/catalogue}"><span class="nav-icon">🛍️</span> Browse Items</a>
+      <a th:href="@{/customer/order-form}" class="active"><span class="nav-icon">✏️</span> Place Order</a>
+      <a th:href="@{/customer/my-orders}"><span class="nav-icon">📦</span> My Orders</a>
     </nav>
-    <main class="content">
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <div class="alert error" th:if="${error}" th:text="${error}"></div>
-        
-        <section class="form-card">
-            <div class="card-header">
-                <div>
-                    <h2>Create Order</h2>
-                    <p>Select items and quantities to place your order.</p>
-                </div>
-            </div>
-            <form class="item-form" method="post" th:action="@{/customer/orders}" th:object="${orderForm}">
-                <div class="form-group">
-                    <label for="itemId">Item</label>
-                    <select id="itemId" th:field="*{itemId}" required>
-                        <option value="">Select an item</option>
-                        <option th:each="item : ${items}" 
-                                th:value="${item.id}"
-                                th:disabled="${item.quantity == 0}"
-                                th:text="${item.sku + ' — ' + item.name + ' (Available: ' + item.quantity + ')'}"></option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="quantity">Order quantity</label>
-                    <input id="quantity" type="number" min="1" th:field="*{quantity}" required>
-                </div>
-                <div class="form-actions">
-                    <a th:href="@{/customer/catalogue}" class="btn btn-secondary">Cancel</a>
-                    <button class="btn btn-primary" type="submit">Place Order</button>
-                </div>
-            </form>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1>✏️ Place an Order</h1>
+          <p>Select an item and the quantity you need.</p>
+        </div>
+        <a class="btn btn-secondary" th:href="@{/customer/catalogue}">← Back to Catalogue</a>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <div class="alert success" th:if="${message}">✅ <span th:text="${message}"></span></div>
+      <div class="alert error"   th:if="${error}">❌ <span th:text="${error}"></span></div>
+
+      <div class="form-card">
+        <div class="card-header">
+          <div>
+            <h2>Order Details</h2>
+            <p>Only in-stock items are available to order.</p>
+          </div>
+        </div>
+
+        <form class="item-form" method="post" th:action="@{/customer/orders}" th:object="${orderForm}">
+          <div class="form-group">
+            <label for="itemId">Select Item</label>
+            <select id="itemId" th:field="*{itemId}" required>
+              <option value="">— Choose an item —</option>
+              <option th:each="item : ${items}"
+                      th:value="${item.id}"
+                      th:disabled="${item.quantity == 0}"
+                      th:text="${item.sku + ' — ' + item.name + ' (Available: ' + item.quantity + ')'}">
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="quantity">Quantity</label>
+            <input id="quantity" type="number" min="1" th:field="*{quantity}" placeholder="Enter quantity" required>
+          </div>
+
+          <div class="form-actions">
+            <a th:href="@{/customer/catalogue}" class="btn btn-secondary">Cancel</a>
+            <button class="btn btn-primary" type="submit">🛒 Place Order</button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

@@ -1,84 +1,149 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stock Transactions</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stock Transactions — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div><h1>Warehouse Picking Dashboard</h1><p>Stock Transactions</p></div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/}">Dashboard</a><a th:href="@{/items}">Items</a>
-        <a th:href="@{/stock}">Stock</a><a th:href="@{/orders}">Orders</a>
-        <a th:href="@{/alerts}">Alerts</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Operations Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main Menu</div>
+      <a th:href="@{/}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a th:href="@{/items}"><span class="nav-icon">📋</span> Item Catalogue</a>
+      <a th:href="@{/stock}" class="active"><span class="nav-icon">📦</span> Stock Transactions</a>
+      <a th:href="@{/orders}"><span class="nav-icon">🛒</span> Orders</a>
+      <a th:href="@{/alerts}"><span class="nav-icon">🔔</span> Stock Alerts</a>
     </nav>
-    <main class="content">
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <div class="alert error" th:if="${error}" th:text="${error}"></div>
-        <section class="form-card">
-            <div class="card-header"><div><h2>Record Stock Movement</h2>
-                <p>Stock-out cannot exceed available quantity.</p></div></div>
-            <form class="item-form" method="post" th:action="@{/stock}"
-                  th:object="${transactionForm}">
-                <div class="form-group">
-                    <label for="itemId">Item</label>
-                    <select id="itemId" th:field="*{itemId}" required>
-                        <option value="">Select an item</option>
-                        <option th:each="item : ${items}" th:value="${item.id}"
-                                th:text="${item.sku + ' — ' + item.name + ' (Qty: ' + item.quantity + ')'}">
-                        </option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="quantity">Quantity to Receive (IN)</label>
-                        <input id="quantity" type="number" min="1"
-                               th:field="*{quantity}" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="notes">Notes (optional)</label>
-                    <input id="notes" type="text" th:field="*{notes}"
-                           placeholder="Restock delivery, batch number, supplier...">
-                </div>
-                <p style="font-size: 12px; color: #6b7280; margin: 12px 0 0 0;">
-                    <strong>Note:</strong> Stock OUT is automatically managed through customer orders. Only record stock receipts here.
-                </p>
-                <div class="form-actions">
-                    <button class="btn btn-primary" type="submit">Record Stock Receipt</button>
-                </div>
-            </form>
-        </section>
-        <section class="card section-gap">
-            <div class="card-header"><div><h2>Transaction History</h2>
-                <p>Newest transactions first.</p></div></div>
-            <div class="table-wrapper">
-                <table>
-                    <thead><tr><th>Date</th><th>SKU</th><th>Item</th>
-                        <th>Type</th><th>Quantity</th><th>Notes</th></tr></thead>
-                    <tbody>
-                    <tr th:each="tx : ${transactions}">
-                        <td th:text="${#temporals.format(tx.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
-                        <td th:text="${tx.item.sku}">SKU</td>
-                        <td th:text="${tx.item.name}">Item</td>
-                        <td th:text="${tx.type}">IN</td>
-                        <td th:text="${tx.quantity}">1</td>
-                        <td th:text="${tx.notes}">Notes</td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(transactions)}">
-                        <td colspan="6">No stock transactions recorded yet.</td>
-                    </tr>
-                    </tbody>
-                </table>
+        <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1>📦 Stock Transactions</h1>
+          <p>Record stock receipts and view the full movement history.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <div class="alert success" th:if="${message}">✅ <span th:text="${message}"></span></div>
+      <div class="alert error"   th:if="${error}">❌ <span th:text="${error}"></span></div>
+
+      <!-- Record Stock Receipt -->
+      <div class="form-card" style="max-width:100%; margin:0 0 24px;">
+        <div class="card-header">
+          <div>
+            <h2>Record Stock Receipt</h2>
+            <p>Stock-out is managed automatically through customer orders. Only record stock received here.</p>
+          </div>
+          <span class="badge badge-green">📥 Stock IN</span>
+        </div>
+
+        <form class="item-form" method="post" th:action="@{/stock}" th:object="${transactionForm}">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="itemId">Select Item</label>
+              <select id="itemId" th:field="*{itemId}" required>
+                <option value="">— Choose an item —</option>
+                <option th:each="item : ${items}"
+                        th:value="${item.id}"
+                        th:text="${item.sku + ' — ' + item.name + ' (Qty: ' + item.quantity + ')'}">
+                </option>
+              </select>
             </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+            <div class="form-group">
+              <label for="quantity">Quantity Received</label>
+              <input id="quantity" type="number" min="1" th:field="*{quantity}" placeholder="e.g. 50" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <input id="notes" type="text" th:field="*{notes}"
+                   placeholder="e.g. Restock delivery, batch #ABC123, Supplier: ACME...">
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">📥 Record Stock Receipt</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>Transaction History</h2>
+            <p>Newest transactions shown first.</p>
+          </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(transactions)}" class="empty-state">
+          <span class="empty-icon">📊</span>
+          <h3>No transactions yet</h3>
+          <p>Stock receipts and order fulfilments will appear here.</p>
+        </div>
+
+        <div class="table-wrapper" th:unless="${#lists.isEmpty(transactions)}">
+          <table>
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>SKU</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Quantity</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="tx : ${transactions}">
+                <td style="color:#64748b; font-size:12.5px;" th:text="${#temporals.format(tx.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+                <td><span class="sku" th:text="${tx.item.sku}">SKU</span></td>
+                <td style="font-weight:600;" th:text="${tx.item.name}">Item</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${tx.type.toString() == 'IN'} ? ' badge-green' : ' badge-red'"
+                        th:text="${tx.type}">IN</span>
+                </td>
+                <td style="font-weight:700;" th:text="${tx.quantity}">1</td>
+                <td style="color:#64748b;" th:text="${tx.notes}">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

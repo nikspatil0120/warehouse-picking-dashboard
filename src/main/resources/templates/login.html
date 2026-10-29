@@ -1,105 +1,82 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login - Warehouse Picking Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-    <style>
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #172554 0%, #4f46e5 100%);
-        }
-        
-        .login-card {
-            background: white;
-            border-radius: 14px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-            padding: 40px;
-        }
-        
-        .login-card h1 {
-            text-align: center;
-            color: #172554;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        
-        .login-card p {
-            text-align: center;
-            color: #6b7280;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        
-        .login-form input {
-            margin-bottom: 15px;
-        }
-        
-        .login-form input:last-of-type {
-            margin-bottom: 0;
-        }
-        
-        .btn-login {
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .alert {
-            margin-bottom: 20px;
-        }
-        
-        .login-footer {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .login-footer a {
-            color: #4f46e5;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        
-        .login-footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-<div class="login-container">
-    <div class="login-card">
-        <h1>Warehouse Dashboard</h1>
-        <p>Sign in to your account</p>
 
-        <div class="alert success" th:if="${param.logout}" th:text="'You have been logged out successfully.'"></div>
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <div class="alert error" th:if="${param.error}" th:text="'Invalid username or password.'"></div>
+<!-- Floating theme toggle for auth pages -->
+<button class="theme-toggle-float" onclick="document.documentElement.getAttribute('data-theme')==='light'?(document.documentElement.removeAttribute('data-theme'),localStorage.setItem('wh-theme','dark')):(document.documentElement.setAttribute('data-theme','light'),localStorage.setItem('wh-theme','light'));this.querySelector('.ftl').textContent=document.documentElement.getAttribute('data-theme')==='light'?'🌙':'☀️'" aria-label="Toggle theme">
+  <span class="ftl">☀️</span>
+</button>
 
-        <form class="login-form" method="post" th:action="@{/login}">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input id="username" type="text" name="username" required autofocus>
-            </div>
+<div class="login-bg">
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input id="password" type="password" name="password" required>
-            </div>
-
-            <button class="btn btn-primary btn-login" type="submit">Sign In</button>
-        </form>
-
-        <div class="login-footer">
-            <p>Don't have an account? <a th:href="@{/register}">Create one</a></p>
-        </div>
+  <!-- Left panel -->
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="login-brand-icon">📦</div>
+      <h1>Warehouse<br>Picking Dashboard</h1>
+      <p>Streamline your warehouse operations with real-time inventory tracking, order management, and stock alerts.</p>
     </div>
+
+    <div class="login-features">
+      <div class="login-feature">
+        <div class="login-feature-icon">📋</div>
+        <span>Real-time inventory catalogue</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon">🔔</div>
+        <span>Automated low-stock alerts</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon">📦</div>
+        <span>End-to-end order tracking</span>
+      </div>
+      <div class="login-feature">
+        <div class="login-feature-icon">📊</div>
+        <span>Stock transaction history</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="login-right">
+    <div class="login-card">
+      <p class="login-title">Welcome back 👋</p>
+      <p class="login-sub">Sign in to your account to continue.</p>
+
+      <div class="alert success" th:if="${param.logout}">✅ You've been signed out successfully.</div>
+      <div class="alert success" th:if="${message}" th:text="${message}"></div>
+      <div class="alert error"   th:if="${param.error}">❌ Incorrect username or password. Try again.</div>
+
+      <form class="login-form" method="post" th:action="@{/login}">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" type="text" name="username" placeholder="Enter your username" required autofocus>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" name="password" placeholder="••••••••" required>
+        </div>
+        <button class="btn btn-primary btn-login" type="submit">Sign In →</button>
+      </form>
+
+      <div class="login-footer-link">
+        Don't have an account? <a th:href="@{/register}">Create one</a>
+      </div>
+    </div>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

@@ -16,39 +16,52 @@ public class SampleUserLoader {
     @Bean
     CommandLineRunner loadSampleUsers(UserRepository userRepository, UserService userService) {
         return args -> {
-            if (userRepository.count() == 0) {
-                // Create admin user
-                userService.createAdminIfNotExists(
-                        "admin",
-                        "admin@warehouse.local",
-                        "admin123"
-                );
-                logger.info("✅ Default admin user created: admin / admin123");
-
-                // Create sample customer users
-                try {
-                    userService.registerCustomer(
-                            "customer1",
-                            "customer1@example.com",
-                            "customer123"
+            try {
+                long userCount = userRepository.count();
+                logger.info("📊 User count in database: {}", userCount);
+                
+                if (userCount == 0) {
+                    logger.info("🔧 No users found, creating default users...");
+                    
+                    // Create admin user
+                    var adminOpt = userService.createAdminIfNotExists(
+                            "admin",
+                            "admin@warehouse.local",
+                            "admin123"
                     );
-                    logger.info("✅ Sample customer user 1 created");
-                } catch (IllegalArgumentException e) {
-                    // Ignore if already exists
-                }
+                    if (adminOpt.isPresent()) {
+                        logger.info("✅ Default admin user created: admin / admin123");
+                    } else {
+                        logger.warn("⚠️  Admin user already exists");
+                    }
 
-                try {
-                    userService.registerCustomer(
-                            "customer2",
-                            "customer2@example.com",
-                            "customer123"
-                    );
-                    logger.info("✅ Sample customer user 2 created");
-                } catch (IllegalArgumentException e) {
-                    // Ignore if already exists
+                    // Create sample customer users
+                    try {
+                        userService.registerCustomer(
+                                "customer1",
+                                "customer1@example.com",
+                                "customer123"
+                        );
+                        logger.info("✅ Sample customer user 1 created");
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("⚠️  Customer 1 creation failed: {}", e.getMessage());
+                    }
+
+                    try {
+                        userService.registerCustomer(
+                                "customer2",
+                                "customer2@example.com",
+                                "customer123"
+                        );
+                        logger.info("✅ Sample customer user 2 created");
+                    } catch (IllegalArgumentException e) {
+                        logger.warn("⚠️  Customer 2 creation failed: {}", e.getMessage());
+                    }
+                } else {
+                    logger.info("✅ Sample users already exist ({} users), skipping user load", userCount);
                 }
-            } else {
-                logger.info("✅ Sample users already exist, skipping user load");
+            } catch (Exception e) {
+                logger.error("❌ Error loading sample users: {}", e.getMessage(), e);
             }
         };
     }

@@ -1,54 +1,82 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Customer Portal - Warehouse Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Portal — Warehouse Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div>
-            <h1>Warehouse Picking Dashboard</h1>
-            <p>Customer Portal</p>
-        </div>
-        <div style="color: white; text-align: right;">
-            <p th:text="'Welcome, ' + ${username}"></p>
-            <a href="/logout" style="color: #c7d2fe; text-decoration: none;">Log out</a>
-        </div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/customer}">Home</a>
-        <a th:href="@{/customer/catalogue}">Browse Items</a>
-        <a th:href="@{/customer/order-form}">Place Order</a>
-        <a th:href="@{/customer/my-orders}">My Orders</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Customer Portal</p>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" th:text="${#strings.toUpperCase(#strings.substring(username,0,1))}">C</div>
+      <div class="user-info">
+        <div class="user-name" th:text="${username}">customer1</div>
+        <div class="user-role">Customer</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Customer Menu</div>
+      <a th:href="@{/customer}" class="active"><span class="nav-icon">🏠</span> Home</a>
+      <a th:href="@{/customer/catalogue}"><span class="nav-icon">🛍️</span> Browse Items</a>
+      <a th:href="@{/customer/order-form}"><span class="nav-icon">✏️</span> Place Order</a>
+      <a th:href="@{/customer/my-orders}"><span class="nav-icon">📦</span> My Orders</a>
     </nav>
-    <main class="content">
-        <section class="card">
-            <div class="card-header">
-                <div>
-                    <h2>Welcome to the Warehouse Portal</h2>
-                    <p>Browse our product catalogue and manage your orders.</p>
-                </div>
-            </div>
-            <div class="dashboard-grid">
-                <a class="dashboard-tile" th:href="@{/customer/catalogue}">
-                    <h3>Browse Items</h3>
-                    <p>View all available products and check stock levels.</p>
-                </a>
-                <a class="dashboard-tile" th:href="@{/customer/order-form}">
-                    <h3>Place Order</h3>
-                    <p>Create a new order for the items you need.</p>
-                </a>
-                <a class="dashboard-tile" th:href="@{/customer/my-orders}">
-                    <h3>View Orders</h3>
-                    <p>Check your order history and current order status.</p>
-                </a>
-            </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1 th:text="'Welcome back, ' + ${username} + ' 👋'">Welcome back 👋</h1>
+          <p>Browse the catalogue and manage your orders from here.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="dashboard-grid" style="padding:0;">
+        <a class="dashboard-tile" th:href="@{/customer/catalogue}">
+          <span class="tile-icon">🛍️</span>
+          <h3>Browse Catalogue</h3>
+          <p>View all available products and check current stock levels.</p>
+        </a>
+        <a class="dashboard-tile" th:href="@{/customer/order-form}">
+          <span class="tile-icon">✏️</span>
+          <h3>Place an Order</h3>
+          <p>Create a new order for items you need from the warehouse.</p>
+        </a>
+        <a class="dashboard-tile" th:href="@{/customer/my-orders}">
+          <span class="tile-icon">📦</span>
+          <h3>My Orders</h3>
+          <p>Track your order history and view current status.</p>
+        </a>
+      </div>
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

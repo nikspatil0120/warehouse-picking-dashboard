@@ -1,61 +1,131 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Order Management</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orders — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
-        <div><h1>Warehouse Picking Dashboard</h1><p>Order Management</p></div>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/}">Dashboard</a><a th:href="@{/items}">Items</a>
-        <a th:href="@{/stock}">Stock</a><a th:href="@{/orders}">Orders</a>
-        <a th:href="@{/alerts}">Alerts</a>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Operations Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main Menu</div>
+      <a th:href="@{/}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a th:href="@{/items}"><span class="nav-icon">📋</span> Item Catalogue</a>
+      <a th:href="@{/stock}"><span class="nav-icon">📦</span> Stock Transactions</a>
+      <a th:href="@{/orders}" class="active"><span class="nav-icon">🛒</span> Orders</a>
+      <a th:href="@{/alerts}"><span class="nav-icon">🔔</span> Stock Alerts</a>
     </nav>
-    <main class="content">
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <div class="alert error" th:if="${error}" th:text="${error}"></div>
-        <section class="card">
-            <div class="card-header"><div><h2>Orders</h2>
-                <p>Update the workflow status for each order.</p></div></div>
-            <div class="table-wrapper">
-                <table>
-                    <thead><tr><th>ID</th><th>Customer</th><th>Item</th><th>Quantity</th>
-                        <th>Created</th><th>Status</th><th>Update Status</th></tr></thead>
-                    <tbody>
-                    <tr th:each="order : ${orders}">
-                        <td th:text="${order.id}">1</td>
-                        <td th:text="${order.customer != null ? order.customer.username : 'Admin Order'}">N/A</td>
-                        <td th:text="${order.item.sku + ' — ' + order.item.name}">Item</td>
-                        <td th:text="${order.quantity}">1</td>
-                        <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
-                        <td><span class="status" th:text="${order.status}">PENDING</span></td>
-                        <td>
-                            <form class="inline-form" method="post"
-                                  th:action="@{/orders/{id}/status(id=${order.id})}">
-                                <select name="status" required>
-                                    <option th:each="status : ${statuses}"
-                                            th:value="${status}" th:text="${status}"
-                                            th:selected="${status == order.status}"></option>
-                                </select>
-                                <button class="btn btn-primary" type="submit">Update</button>
-                            </form>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(orders)}">
-                        <td colspan="7">No orders have been created yet.</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+        <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div>
+          <h1>🛒 Order Management</h1>
+          <p>Review all orders and update their fulfilment status.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <div class="alert success" th:if="${message}">✅ <span th:text="${message}"></span></div>
+      <div class="alert error"   th:if="${error}">❌ <span th:text="${error}"></span></div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>All Orders</h2>
+            <p>Update the workflow status for each order below.</p>
+          </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(orders)}" class="empty-state">
+          <span class="empty-icon">🛒</span>
+          <h3>No orders yet</h3>
+          <p>Orders placed by customers will appear here.</p>
+        </div>
+
+        <div class="table-wrapper" th:unless="${#lists.isEmpty(orders)}">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Update</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="order : ${orders}">
+                <td>
+                  <span style="font-family:monospace; font-size:12px; background:#f1f5f9; padding:3px 7px; border-radius:5px; color:#475569;"
+                        th:text="${#strings.abbreviate(order.id, 12)}">ID</span>
+                </td>
+                <td style="font-weight:600;" th:text="${order.customer != null ? order.customer.username : 'Admin Order'}">Customer</td>
+                <td>
+                  <div style="font-weight:600; font-size:13.5px;" th:text="${order.item.name}">Item</div>
+                  <div style="margin-top:2px;"><span class="sku" th:text="${order.item.sku}">SKU</span></div>
+                </td>
+                <td style="font-weight:700;" th:text="${order.quantity}">1</td>
+                <td style="color:#64748b; font-size:12.5px;" th:text="${#temporals.format(order.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+                <td>
+                  <span class="status"
+                        th:classappend="${order.status.toString() == 'PENDING'} ? '' :
+                                        (${order.status.toString() == 'PICKING'} ? ' status-blue' :
+                                        (${order.status.toString() == 'PACKED'} ? ' status-warning' :
+                                        (${order.status.toString() == 'SHIPPED'} ? ' status-good' :
+                                        (${order.status.toString() == 'DELIVERED'} ? ' status-good' : ' status-danger'))))"
+                        th:text="${order.status}">PENDING</span>
+                </td>
+                <td>
+                  <form class="inline-form" method="post"
+                        th:action="@{/orders/{id}/status(id=${order.id})}">
+                    <select name="status" required>
+                      <option th:each="status : ${statuses}"
+                              th:value="${status}"
+                              th:text="${status}"
+                              th:selected="${status == order.status}"></option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>

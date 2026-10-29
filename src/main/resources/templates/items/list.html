@@ -1,76 +1,121 @@
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Item Catalogue | Warehouse Picking Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+  <script>!function(){var t=localStorage.getItem("wh-theme");if(t==="light")document.documentElement.setAttribute("data-theme","light")}();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Item Catalogue — Warehouse Picking Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 <div class="app-shell">
-    <header class="topbar">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">📦</div>
+      <h2>Warehouse Dashboard</h2>
+      <p>Operations Portal</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main Menu</div>
+      <a th:href="@{/}"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a th:href="@{/items}" class="active"><span class="nav-icon">📋</span> Item Catalogue</a>
+      <a th:href="@{/stock}"><span class="nav-icon">📦</span> Stock Transactions</a>
+      <a th:href="@{/orders}"><span class="nav-icon">🛒</span> Orders</a>
+      <a th:href="@{/alerts}"><span class="nav-icon">🔔</span> Stock Alerts</a>
+    </nav>
+        <div class="sidebar-footer">
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <span class="toggle-icon">☀️</span>
+        <span data-theme-label>☀️ Light mode</span>
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </button>
+      <a href="/logout"><span>🚪</span> Sign Out</a>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+
+    <div class="page-header">
+      <div class="page-header-inner">
         <div>
-            <h1>Warehouse Picking Dashboard</h1>
-            <p>Item Catalogue</p>
+          <h1>📋 Item Catalogue</h1>
+          <p>Search and manage all inventory items in the warehouse.</p>
         </div>
         <a class="btn btn-primary" th:href="@{/items/new}">+ Add Item</a>
-    </header>
-    <nav class="nav-links">
-        <a th:href="@{/}">Dashboard</a>
-        <a th:href="@{/items}">Items</a>
-        <a th:href="@{/stock}">Stock</a>
-        <a th:href="@{/orders}">Orders</a>
-        <a th:href="@{/alerts}">Alerts</a>
-    </nav>
-    <main class="content">
-        <div class="alert success" th:if="${message}" th:text="${message}"></div>
-        <section class="card">
-            <div class="card-header">
-                <div>
-                    <h2>Item Catalogue</h2>
-                    <p>Search by SKU or item name and check current stock.</p>
-                </div>
-                <span class="item-count" th:text="${totalItems} + ' total items'">0 items</span>
-            </div>
-            <form class="search-form" method="get" th:action="@{/items}">
-                <input type="text" name="search" placeholder="Search SKU or name"
-                       th:value="${search}">
-                <button class="btn btn-primary" type="submit">Search</button>
-                <a class="btn btn-secondary" th:href="@{/items}">Clear</a>
-            </form>
-            <div th:if="${#lists.isEmpty(items)}" class="empty-state">
-                <h3>No items found</h3>
-                <p>No items match this search, or the catalogue is empty.</p>
-                <a class="btn btn-primary" th:href="@{/items/new}">+ Add Item</a>
-            </div>
-            <div class="table-wrapper" th:unless="${#lists.isEmpty(items)}">
-                <table>
-                    <thead>
-                    <tr><th>SKU</th><th>Name</th><th>Location</th>
-                        <th>Quantity</th><th>Reorder At</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="item : ${items}">
-                        <td><span class="sku" th:text="${item.sku}">SKU</span></td>
-                        <td class="item-name" th:text="${item.name}">Item</td>
-                        <td th:text="${item.location}">A-01</td>
-                        <td th:text="${item.quantity}">0</td>
-                        <td th:text="${item.reorderThreshold}">5</td>
-                        <td>
-                            <span class="status"
-                                  th:classappend="${item.quantity == 0} ? ' status-danger' : (${item.quantity <= item.reorderThreshold} ? ' status-warning' : ' status-good')"
-                                  th:text="${item.quantity == 0} ? 'OUT OF STOCK' : (${item.quantity <= item.reorderThreshold} ? 'LOW STOCK' : 'IN STOCK')">
-                                IN STOCK
-                            </span>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </main>
-    <footer>Warehouse Picking Dashboard &copy; 2026</footer>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <div class="alert success" th:if="${message}">✅ <span th:text="${message}"></span></div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2>All Items</h2>
+            <p>Search by SKU or item name and check current stock.</p>
+          </div>
+          <span class="item-count" th:text="${totalItems} + ' items'">0 items</span>
+        </div>
+
+        <form class="search-form" method="get" th:action="@{/items}">
+          <input type="text" name="search" placeholder="🔍  Search SKU or name…" th:value="${search}">
+          <button class="btn btn-primary" type="submit">Search</button>
+          <a class="btn btn-secondary" th:href="@{/items}">Clear</a>
+        </form>
+
+        <div th:if="${#lists.isEmpty(items)}" class="empty-state">
+          <span class="empty-icon">📭</span>
+          <h3>No items found</h3>
+          <p>No items match this search, or the catalogue is empty.</p>
+          <a class="btn btn-primary" th:href="@{/items/new}">+ Add First Item</a>
+        </div>
+
+        <div class="table-wrapper" th:unless="${#lists.isEmpty(items)}">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Quantity</th>
+                <th>Reorder At</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="item : ${items}">
+                <td><span class="sku" th:text="${item.sku}">SKU</span></td>
+                <td class="item-name" th:text="${item.name}">Item Name</td>
+                <td>
+                  <span style="background:#f1f5f9; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600; color:#475569;"
+                        th:text="${item.location}">A-01</span>
+                </td>
+                <td style="font-weight:700;" th:text="${item.quantity}">0</td>
+                <td style="color:#94a3b8;" th:text="${item.reorderThreshold}">5</td>
+                <td>
+                  <span class="status"
+                        th:classappend="${item.quantity == 0} ? ' status-danger' : (${item.quantity <= item.reorderThreshold} ? ' status-warning' : ' status-good')"
+                        th:text="${item.quantity == 0} ? 'OUT OF STOCK' : (${item.quantity <= item.reorderThreshold} ? 'LOW STOCK' : 'IN STOCK')">
+                    IN STOCK
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="page-footer">Warehouse Picking Dashboard &copy; 2026</footer>
+  </div>
+
 </div>
+<script th:src="@{/js/theme.js}"></script>
 </body>
 </html>
