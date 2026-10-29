@@ -88,7 +88,8 @@ public class AuthenticationTests {
     public void testAuthenticatedWarehouseAdminCanAccessHome() throws Exception {
         mvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Welcome")));
+                .andExpect(content().string(containsString("admin")))
+                .andExpect(content().string(containsString("dashboard-tile")));
     }
 
     @Test
@@ -96,7 +97,8 @@ public class AuthenticationTests {
     public void testAuthenticatedCustomerCanAccessHome() throws Exception {
         mvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Welcome")));
+                .andExpect(content().string(containsString("customer")))
+                .andExpect(content().string(containsString("dashboard-tile")));
     }
 
     @Test
