@@ -37,7 +37,6 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/diagnostic/**").permitAll()
 
                         // Customer endpoints
                         .requestMatchers("/customer/**").hasRole("CUSTOMER")
