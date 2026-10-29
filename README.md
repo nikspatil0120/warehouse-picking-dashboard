@@ -1,172 +1,177 @@
 # Warehouse Picking Dashboard
 
-A Spring Boot 3.5.16 warehouse management system with MongoDB persistence, Spring Security authentication, and role-based access control (RBAC).
+A full-stack Spring Boot 3.5 warehouse management system with MongoDB persistence, Spring Security RBAC, a premium dark/light UI, Docker containerisation, and a Jenkins CI/CD pipeline.
+
+---
+
+## Screenshots
+
+| Dark Mode | Light Mode |
+|-----------|------------|
+| Glassmorphism sidebar, gradient mesh background, glowing status pills | Clean white cards, soft indigo accents, full contrast text |
+
+---
 
 ## Features
 
-- **User Authentication**: Secure login with Spring Security
-- **Role-Based Access Control**: WAREHOUSE_ADMIN, WAREHOUSE_STAFF, CUSTOMER roles
-- **Inventory Management**: Track items, stock levels, and reorder thresholds
-- **Order Processing**: Create, update, and manage customer orders
-- **Stock Transactions**: Record and track warehouse stock movements
-- **Real-time Dashboards**: Web UI for warehouse operations
+- **Authentication** — Secure form-based login with Spring Security 6
+- **Role-Based Access Control** — `WAREHOUSE_ADMIN` and `CUSTOMER` roles with method-level enforcement
+- **Inventory Management** — Item catalogue with SKU search, stock levels, reorder thresholds
+- **Order Processing** — Full order lifecycle (PENDING → PICKING → PACKED → SHIPPED → DELIVERED)
+- **Stock Transactions** — Record inbound stock receipts; outbound managed automatically via orders
+- **Stock Alerts** — Dashboard of items at or below reorder threshold
+- **Customer Portal** — Customers can browse catalogue, place orders, view/cancel their own orders
+- **Dark / Light Mode** — Persistent theme toggle on every page (saved to `localStorage`)
+- **Docker** — Production-hardened image based on Tomcat 11.0 + JDK 21 Temurin
+- **CI/CD** — Jenkins pipeline: build → test → Docker build → Docker Hub push
+
+---
 
 ## Tech Stack
 
-- **Backend**: Spring Boot 3.5.16, Spring Data MongoDB
-- **Database**: MongoDB (local)
-- **Security**: Spring Security 6.x
-- **UI**: Thymeleaf, HTML/CSS
-- **Testing**: JUnit 5, Selenium, Testcontainers
-- **Build**: Maven
+| Layer | Technology |
+|-------|------------|
+| Backend | Spring Boot 3.5.16 |
+| Security | Spring Security 6 |
+| Database | MongoDB (Atlas cloud / local) |
+| UI | Thymeleaf, Inter font, custom CSS (glassmorphism) |
+| Testing | JUnit 5, Mockito, Spring Security Test, Selenium, Testcontainers |
+| Build | Maven |
+| Container | Docker — `tomcat:11.0-jdk21-temurin-noble` |
+| CI/CD | Jenkins declarative pipeline |
+
+---
 
 ## Prerequisites
 
 - Java 17+
 - Maven 3.6+
-- MongoDB Atlas account (for cloud development) OR local MongoDB instance (optional)
-- Modern web browser for UI access
+- MongoDB Atlas account **or** a local MongoDB instance
+- Docker (for container builds)
+- Modern web browser
 
-## Setup & Run Locally
+---
 
-### 1. MongoDB Setup (Skip if using Atlas)
+## Quick Start (local)
 
+### 1. MongoDB
+
+**Atlas (default — already configured in `application.properties`):**
+No setup needed. The Atlas URI is pre-configured for `warehouse_dev`.
+
+**Local MongoDB instead:**
 ```bash
-# Using Docker
 docker run -d -p 27017:27017 --name mongodb mongo:7.0
-
-# Or if you have MongoDB installed locally
-mongod
+```
+Then update `src/main/resources/application.properties`:
+```properties
+spring.data.mongodb.uri=mongodb://localhost:27017/warehouse
 ```
 
-Then update `application.properties` to use local MongoDB (see Database Configuration section).
-
-### 2. Build the Project
-
-```bash
-mvn clean test
-mvn clean package -DskipTests
-```
-
-### 3. Run the Application
-
-```bash
-java -jar target/picking-dashboard-0.0.1-SNAPSHOT.war
-```
-
-Or run directly with Maven:
+### 2. Run
 
 ```bash
 mvn spring-boot:run
 ```
 
-### 4. Access the Application
+Open **http://localhost:8081**
 
-Open your browser and go to:
+### 3. Default credentials
 
-```
-http://localhost:8081
-```
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin123` | WAREHOUSE_ADMIN |
+| `customer1` | `customer123` | CUSTOMER |
+| `customer2` | `customer123` | CUSTOMER |
 
-The application will automatically create default users on first run (see Default Users section below).
+> These are created automatically on first startup if no users exist in the database.
 
-## Default Users
+---
 
-The application creates a default admin user on startup:
-
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Role**: WAREHOUSE_ADMIN
-
-## Database Configuration
-
-### Development (Default)
-
-MongoDB Atlas is configured for development:
-- **Database**: `warehouse_dev`
-- **Connection**: MongoDB Atlas cluster (cloud)
-- **Collections created automatically** on first run
-
-Configuration in `application.properties`:
-```properties
-spring.data.mongodb.uri=mongodb+srv://nikhilpatil0120_db_user:...@cluster0.oj279ep.mongodb.net/warehouse_dev?retryWrites=true&w=majority
-spring.data.mongodb.auto-index-creation=true
-```
-
-### Local Development (Optional)
-
-To use a local MongoDB instead, update `application.properties`:
-```properties
-spring.data.mongodb.uri=mongodb://localhost:27017/warehouse
-```
-
-Then start MongoDB locally:
-```bash
-docker run -d -p 27017:27017 --name mongodb mongo:7.0
-```
-
-### Collections
-
-- `users` - User accounts and authentication
-- `items` - Inventory items with stock levels
-- `customer_orders` - Customer purchase orders
-- `stock_transactions` - Stock movement history
-
-## API Endpoints
-
-### Items
-- `GET /api/items` - List all items
-- `GET /api/items/{id}` - Get item details
-- `POST /api/items` - Create item
-- `PUT /api/items/{id}` - Update item
-- `DELETE /api/items/{id}` - Delete item
-
-### Orders
-- `GET /api/orders` - List orders
-- `POST /api/orders` - Create order
-- `PUT /api/orders/{id}/status` - Update order status
-
-### Stock Transactions
-- `GET /api/stock-transactions` - View transaction history
-- `POST /api/stock-transactions` - Record transaction
-
-## Web UI
-
-- `/` - Dashboard
-- `/items` - Item catalogue
-- `/orders` - Order management
-- `/stock` - Stock tracking
-- `/alerts` - Low stock alerts
-
-## Testing
-
-### Run All Tests
+## Running Tests
 
 ```bash
+# Full test suite (41 tests)
 mvn clean test
+
+# Individual suites
+mvn test -Dtest=AuthenticationTests
+mvn test -Dtest=AuthorizationTests
+mvn test -Dtest=OrderServiceTests
+mvn test -Dtest=ItemServiceTest
+mvn test -Dtest=StockTransactionServiceTest
+mvn test -Dtest=ItemCatalogueSeleniumTest
+mvn test -Dtest=PickingDashboardApplicationTests
 ```
 
-### Run Specific Test Suite
+### Test breakdown (41 / 41 passing)
+
+| Suite | Tests | Coverage |
+|-------|-------|----------|
+| `AuthenticationTests` | 8 | Login, logout, registration, invalid credentials |
+| `AuthorizationTests` | 11 | Role-based endpoint access, redirect behaviour |
+| `OrderServiceTests` | 10 | Order creation, status transitions, stock deduction |
+| `ItemServiceTest` | 4 | CRUD, SKU uniqueness, validation |
+| `StockTransactionServiceTest` | 4 | Stock-in recording, quantity updates |
+| `ItemCatalogueSeleniumTest` | 3 | Browser-level catalogue rendering |
+| `PickingDashboardApplicationTests` | 1 | Context loads |
+
+---
+
+## Docker
+
+### Build image locally
 
 ```bash
-mvn test -Dtest=OrderServiceTests
-mvn test -Dtest=ItemCatalogueSeleniumTest
-mvn test -Dtest=AuthenticationTests
+mvn clean package -DskipTests
+docker build -t picking-dashboard .
 ```
 
-### Test Results
+### Run container
 
-- **39/41 tests passing** with MongoDB persistence
-- Core services: OrderService, ItemService, StockTransactionService fully verified
-- Authentication & authorization working correctly
+```bash
+docker run -p 8080:8080 \
+  -e SPRING_DATA_MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/warehouse" \
+  picking-dashboard
+```
 
-## Security Features
+### Pull from Docker Hub
 
-- Spring Security authentication
-- RBAC with role-based endpoints
-- CSRF protection
-- Password encoding with bcrypt
-- Transactional safety for stock operations
+```bash
+docker pull ryusseikun/picking-dashboard:build-24
+```
+
+### Healthcheck
+
+The image exposes `/actuator/health` and includes a built-in Docker healthcheck:
+```
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+```
+
+---
+
+## CI/CD Pipeline (Jenkins)
+
+The `Jenkinsfile` defines a declarative pipeline with these stages:
+
+```
+Checkout → Build Package → Verify Application → Continuous Testing → Package Verification → Docker Build → Docker Hub Push
+```
+
+| Stage | What it does |
+|-------|-------------|
+| **Checkout** | Pulls from `main` branch |
+| **Build Package** | `mvn clean package -DskipTests` |
+| **Verify Application** | Confirms WAR artifact exists |
+| **Continuous Testing** | `mvn clean test` — all 41 tests must pass |
+| **Package Verification** | Re-confirms WAR post-test |
+| **Docker Build** | Builds image tagged with `build-$BUILD_NUMBER` |
+| **Docker Hub Push** | Pushes to `ryusseikun/picking-dashboard` |
+
+Latest published image: `ryusseikun/picking-dashboard:build-24`
+
+---
 
 ## Project Structure
 
@@ -174,68 +179,99 @@ mvn test -Dtest=AuthenticationTests
 src/
 ├── main/
 │   ├── java/com/warehouse/picking/
-│   │   ├── controller/          # REST & Web controllers
-│   │   ├── service/             # Business logic
-│   │   ├── repository/          # MongoDB repositories
-│   │   ├── model/               # Entity classes
-│   │   ├── config/              # Spring configuration
-│   │   └── PickingDashboardApplication.java
+│   │   ├── config/          # SecurityConfig, SampleDataLoader, SampleUserLoader, AdminBootstrap
+│   │   ├── controller/      # REST & web controllers (Home, Items, Orders, Stock, Alerts, Customer portal, Login)
+│   │   ├── model/           # Item, CustomerOrder, StockTransaction, User
+│   │   ├── repository/      # MongoDB repositories
+│   │   └── service/         # ItemService, OrderService, StockTransactionService, UserService
 │   └── resources/
 │       ├── application.properties
-│       ├── templates/           # Thymeleaf templates
-│       └── static/             # CSS, JavaScript
+│       ├── static/
+│       │   ├── css/style.css          # Full design system (dark + light themes)
+│       │   └── js/theme.js            # Theme toggle with localStorage persistence
+│       └── templates/
+│           ├── home.html, login.html, register.html, orders.html, stock.html, alerts.html
+│           ├── access-denied.html
+│           ├── items/  (list.html, form.html)
+│           └── customer/  (home, catalogue, order-form, my-orders, order-detail)
 └── test/
     └── java/com/warehouse/picking/
-        ├── OrderServiceTests.java
         ├── AuthenticationTests.java
         ├── AuthorizationTests.java
-        └── ItemCatalogueSeleniumTest.java
+        ├── OrderServiceTests.java
+        ├── ItemServiceTest.java
+        ├── StockTransactionServiceTest.java
+        ├── ItemCatalogueSeleniumTest.java
+        └── PickingDashboardApplicationTests.java
 ```
 
-## Production Deployment
+---
 
-For production deployment with MongoDB Atlas:
+## API Endpoints
 
-1. Update `application.properties` with Atlas URI:
-   ```properties
-   spring.data.mongodb.uri=mongodb+srv://username:password@cluster.mongodb.net/warehouse?retryWrites=true&w=majority
-   ```
+### Items
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| GET | `/api/items` | WAREHOUSE_ADMIN |
+| GET | `/api/items/{id}` | WAREHOUSE_ADMIN |
+| POST | `/api/items` | WAREHOUSE_ADMIN |
+| PUT | `/api/items/{id}` | WAREHOUSE_ADMIN |
+| DELETE | `/api/items/{id}` | WAREHOUSE_ADMIN |
 
-2. Build WAR:
-   ```bash
-   mvn clean package
-   ```
+### Orders
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| GET | `/api/orders` | WAREHOUSE_ADMIN |
+| POST | `/api/orders` | WAREHOUSE_ADMIN |
+| PUT | `/api/orders/{id}/status` | WAREHOUSE_ADMIN |
 
-3. Deploy to application server (Tomcat, JBoss, etc.)
+### Stock Transactions
+| Method | Endpoint | Access |
+|--------|----------|--------|
+| GET | `/api/stock-transactions` | WAREHOUSE_ADMIN |
+| POST | `/api/stock-transactions` | WAREHOUSE_ADMIN |
 
-## Troubleshooting
+---
 
-### Connection refused on port 27017
-- Ensure MongoDB is running: `mongo --version` and `mongod`
-- Check with: `telnet localhost 27017`
+## Web UI Routes
 
-### Tests failing
-- Clear MongoDB data: `db.dropDatabase()`
-- Rebuild: `mvn clean test`
+| Route | Description | Role |
+|-------|-------------|------|
+| `/` | Dashboard | Both |
+| `/items` | Item catalogue | WAREHOUSE_ADMIN |
+| `/items/new` | Add item form | WAREHOUSE_ADMIN |
+| `/stock` | Stock transactions | WAREHOUSE_ADMIN |
+| `/orders` | Order management | WAREHOUSE_ADMIN |
+| `/alerts` | Stock alerts | WAREHOUSE_ADMIN |
+| `/customer` | Customer home | CUSTOMER |
+| `/customer/catalogue` | Browse products | CUSTOMER |
+| `/customer/order-form` | Place order | CUSTOMER |
+| `/customer/my-orders` | Order history | CUSTOMER |
 
-### Port 8081 already in use
-- Change port in `application.properties`:
-  ```properties
-  server.port=8082
-  ```
+---
 
-## Development Notes
+## Security
 
-- Entities use MongoDB `@Document` annotation
-- IDs are String type (MongoDB ObjectId format)
-- Repositories extend `MongoRepository<T, String>`
-- Services handle transactional logic and stock validation
-- Controllers provide REST & web UI endpoints
+- Spring Security 6 form-based authentication
+- BCrypt password hashing
+- CSRF disabled (stateless WAR deployment)
+- Method-level `@PreAuthorize` on controllers
+- Role prefix convention: `ROLE_WAREHOUSE_ADMIN`, `ROLE_CUSTOMER`
+- Production admin provisioned via environment variables (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`) using `AdminBootstrap` — only active under `prod` profile
+
+---
+
+## Environment Variables (Production)
+
+| Variable | Description |
+|----------|-------------|
+| `SPRING_DATA_MONGODB_URI` | MongoDB connection string |
+| `ADMIN_USERNAME` | Initial admin username (prod profile only) |
+| `ADMIN_EMAIL` | Initial admin email (prod profile only) |
+| `ADMIN_PASSWORD` | Initial admin password (prod profile only) |
+
+---
 
 ## License
 
 MIT
-
-## Contact
-
-For issues or questions, please create a GitHub issue.
